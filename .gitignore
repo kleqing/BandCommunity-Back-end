@@ -65,3 +65,6 @@ nunit-*.xml
 # Migration from database
 /BandCommunity.Infrastructure/Migrations
 /BandCommunity.Infrastructure/Migrations/*
+
+# Environment variables
+.env
