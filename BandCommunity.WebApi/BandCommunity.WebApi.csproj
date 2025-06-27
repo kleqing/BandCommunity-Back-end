@@ -7,8 +7,27 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="dotenv.net" Version="3.2.1" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.17"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.17" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.17">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.17">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\BandCommunity.Application\BandCommunity.Application.csproj" />
+      <ProjectReference Include="..\BandCommunity.Domain\BandCommunity.Domain.csproj" />
+      <ProjectReference Include="..\BandCommunity.Infrastructure\BandCommunity.Infrastructure.csproj" />
+      <ProjectReference Include="..\BandCommunity.Repository\BandCommunity.Repository.csproj" />
+      <ProjectReference Include="..\BandCommunity.Shared\BandCommunity.Shared.csproj" />
     </ItemGroup>
 
 </Project>
