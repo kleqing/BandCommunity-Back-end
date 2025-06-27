@@ -9,6 +9,7 @@
     <ItemGroup>
       <Folder Include="Constant\" />
       <Folder Include="Helper\" />
+      <Folder Include="Utility\" />
     </ItemGroup>
 
 </Project>
