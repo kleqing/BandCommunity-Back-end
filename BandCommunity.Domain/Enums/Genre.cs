@@ -1,0 +1,35 @@
+﻿namespace BandCommunity.Domain.Enums;
+
+public enum Genre
+{
+    Unknown,
+    Pop,
+    Rock,
+    HipHop,
+    Rap,
+    Jazz,
+    Blues,
+    Classical,
+    Country,
+    Electronic,
+    Dance,
+    Reggae,
+    Metal,
+    Punk,
+    Alternative,
+    Soul,
+    Folk,
+    Indie,
+    KPop,
+    JPop,
+    Latin,
+    Edm,
+    Trance,
+    House,
+    Techno,
+    Ambient,
+    Acoustic,
+    Gospel,
+    World,
+    Other
+}
