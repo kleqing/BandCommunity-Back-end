@@ -10,7 +10,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BandCommunity.Repository", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BandCommunity.Shared", "BandCommunity.Shared\BandCommunity.Shared.csproj", "{5D0BBA9D-91B5-45C6-8566-40AAEAC30735}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BandCommunity.WebApi", "BandCommunity.WebApi\BandCommunity.WebApi.csproj", "{5E21D307-C0D1-441D-9D7B-11E264E836CB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BandCommunity.WebApi", "BandCommunity.WebApi\BandCommunity.WebApi.csproj", "{34839DCE-F2F3-4987-A298-6F3817D77C2A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -38,9 +38,9 @@ Global
 		{5D0BBA9D-91B5-45C6-8566-40AAEAC30735}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5D0BBA9D-91B5-45C6-8566-40AAEAC30735}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5D0BBA9D-91B5-45C6-8566-40AAEAC30735}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5E21D307-C0D1-441D-9D7B-11E264E836CB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5E21D307-C0D1-441D-9D7B-11E264E836CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5E21D307-C0D1-441D-9D7B-11E264E836CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5E21D307-C0D1-441D-9D7B-11E264E836CB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{34839DCE-F2F3-4987-A298-6F3817D77C2A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34839DCE-F2F3-4987-A298-6F3817D77C2A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34839DCE-F2F3-4987-A298-6F3817D77C2A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34839DCE-F2F3-4987-A298-6F3817D77C2A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
