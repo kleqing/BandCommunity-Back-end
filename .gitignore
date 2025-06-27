@@ -58,3 +58,10 @@ nunit-*.xml
 
 # Visual Studio 2022
 .vs
+
+# VSCode
+.vscode
+
+# Migration from database
+/BandCommunity.Infrastructure/Migrations
+/BandCommunity.Infrastructure/Migrations/*
