@@ -1,11 +1,29 @@
+using BandCommunity.Infrastructure.Data;
+using dotenv.net;
+using Microsoft.EntityFrameworkCore;
+
 namespace BandCommunity.WebApi;
 
 public class Program
 {
     public static void Main(string[] args)
     {
+        DotEnv.Load();
+        
         var builder = WebApplication.CreateBuilder(args);
 
+        var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING");
+        builder.Services.AddDbContext<ApplicationDbContext>(options =>
+            options.UseNpgsql(connectionString));
+        
+        // builder.Services.Configure<JwtOptions>(options =>
+        // {
+        //     options.Secret = Environment.GetEnvironmentVariable("JWT_SECRET");
+        //     options.Issuer = Environment.GetEnvironmentVariable("JWT_ISSUER");
+        //     options.Audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE");
+        //     options.ExpiryInMinutes = int.Parse(Environment.GetEnvironmentVariable("JWT_EXPIRY_MINUTES") ?? "15");
+        // });
+        
         // Add services to the container.
         builder.Services.AddAuthorization();
 
@@ -26,25 +44,6 @@ public class Program
 
         app.UseAuthorization();
 
-        var summaries = new[]
-        {
-            "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-        };
-
-        app.MapGet("/weatherforecast", (HttpContext httpContext) =>
-            {
-                var forecast = Enumerable.Range(1, 5).Select(index =>
-                        new WeatherForecast
-                        {
-                            Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                            TemperatureC = Random.Shared.Next(-20, 55),
-                            Summary = summaries[Random.Shared.Next(summaries.Length)]
-                        })
-                    .ToArray();
-                return forecast;
-            })
-            .WithName("GetWeatherForecast")
-            .WithOpenApi();
 
         app.Run();
     }
