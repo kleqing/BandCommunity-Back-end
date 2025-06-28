@@ -1,7 +1,7 @@
 using System.Text;
 using BandCommunity.Application.Services.Auth;
-using BandCommunity.Domain.Auth;
 using BandCommunity.Domain.Entities;
+using BandCommunity.Domain.JWT;
 using BandCommunity.Infrastructure.Auth;
 using BandCommunity.Infrastructure.Data;
 using dotenv.net;
