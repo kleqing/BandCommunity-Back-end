@@ -1,4 +1,4 @@
-﻿namespace BandCommunity.Domain.Auth;
+﻿namespace BandCommunity.Domain.JWT;
 
 public class Jwt
 {

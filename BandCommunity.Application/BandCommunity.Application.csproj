@@ -11,12 +11,18 @@
       <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="8.0.17" />
       <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.12.1" />
       <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.12.1" />
+      <PackageReference Include="StackExchange.Redis" Version="2.8.41" />
       <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.12.1" />
       <PackageReference Include="System.Security.Claims" Version="4.3.0" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\BandCommunity.Infrastructure\BandCommunity.Infrastructure.csproj" />
+      <ProjectReference Include="..\BandCommunity.Shared\BandCommunity.Shared.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="DTO\Auth\" />
     </ItemGroup>
 
 </Project>
