@@ -2,8 +2,8 @@
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using BandCommunity.Domain.Auth;
 using BandCommunity.Domain.Entities;
+using BandCommunity.Domain.JWT;
 using BandCommunity.Infrastructure.Auth;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
@@ -66,5 +66,11 @@ public class AuthTokenProcess : IAuthTokenProcess
                 Secure = true,
                 SameSite = SameSiteMode.None
             });
+    }
+    
+    public void DeleteAuthTokenCookie(string key)
+    {
+        var context = _contextAccessor.HttpContext;
+        context?.Response.Cookies.Delete(key);
     }
 }
