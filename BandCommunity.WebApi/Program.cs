@@ -1,15 +1,20 @@
 using System.Text;
 using BandCommunity.Application.Services.Auth;
+using BandCommunity.Application.Services.Email;
 using BandCommunity.Domain.Entities;
 using BandCommunity.Domain.JWT;
 using BandCommunity.Infrastructure.Auth;
 using BandCommunity.Infrastructure.Data;
 using BandCommunity.Application.Services.Role;
+using BandCommunity.Domain.Interfaces;
+using BandCommunity.Repository.Repositories;
 using dotenv.net;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
 
 namespace BandCommunity.WebApi;
@@ -28,6 +33,9 @@ public class Program
 
         //! IMPORTANT: Add this line to enable lazy loading
         builder.Services.AddScoped<IAuthTokenProcess, AuthTokenProcess>();
+        builder.Services.AddScoped<IAccountServices, AccountServices>();
+        builder.Services.AddScoped<IUserRepository, UserRepository>();
+        builder.Services.AddTransient<IEmailSender, EmailSender>();
         
         builder.Services.AddIdentity<User, IdentityRole<Guid>>()
             .AddEntityFrameworkStores<ApplicationDbContext>()
@@ -142,7 +150,35 @@ public class Program
 
         //* Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
+        builder.Services.AddSwaggerGen(c =>
+        {
+            c.SwaggerDoc("v1", new OpenApiInfo { Title = "BandCommunity API", Version = "v1" });
+
+            c.AddSecurityDefinition("Bearer", new  OpenApiSecurityScheme
+            {
+                Name = "Authorization",
+                Type = SecuritySchemeType.Http,
+                Scheme = "Bearer",
+                BearerFormat = "JWT",
+                In = ParameterLocation.Header,
+                Description = "Please enter a valid token"
+            });
+            
+            c.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                    },
+                    new string[] {}
+                }
+            });
+        });
 
         var app = builder.Build();
 
@@ -165,6 +201,8 @@ public class Program
 
         app.UseAuthentication();
         app.UseAuthorization();
+        
+        app.MapControllers();
 
         app.Run();
     }
