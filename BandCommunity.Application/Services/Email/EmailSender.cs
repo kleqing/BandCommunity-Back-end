@@ -46,15 +46,15 @@ public class EmailSender : IEmailSender
 
         if (subject.Contains("Reset"))
         {
-            title = "Reset your password";
+            title = "Reset password";
             buttonText = "Reset my password";
-            mainContent = "You recently requested to reset your password for your account. Use the button below to reset the password.";
+            mainContent = "You recently requested to reset your password for your account. Please use the button below to reset the password.";
         }
         else if (subject.Contains("Verify"))
         {
-            title = "Verify your email";
+            title = "Verify email";
             buttonText = "Verify my email";
-            mainContent = "You recently requested to verify your email for your account. Use the button below to verify your email.";
+            mainContent = "You recently requested to verify your email for your account. Please use the button below to verify your email.";
         }
 
         var result = string.Format(@"<!DOCTYPE html
@@ -512,7 +512,7 @@ public class EmailSender : IEmailSender
                     <table class=""email-content"" width=""100%"" cellpadding=""0"" cellspacing=""0"" role=""presentation"">
                         <tr>
                             <td class=""email-masthead"">
-                                <a href=""https://example.com"" class=""f-fallback email-masthead_name"">
+                                <a href=""javascript:void(0)"" class=""f-fallback email-masthead_name"">
                                     {2}
                                 </a>
                             </td>
@@ -526,7 +526,7 @@ public class EmailSender : IEmailSender
                                     <tr>
                                         <td class=""content-cell"">
                                             <div class=""f-fallback"">
-                                                <h1>Hi {0},</h1>
+                                                <h1>Hi {0}!</h1>
                                                 <p>{4} <strong>The link is only valid for the next 24 hours.</strong></p>
                                                 <!-- Action -->
                                                 <table class=""body-action"" align=""center"" width=""100%"" cellpadding=""0""
@@ -557,7 +557,7 @@ public class EmailSender : IEmailSender
                                                         <td>
                                                             <p class=""f-fallback sub"">If you’re having trouble with the
                                                                 button above, copy and paste the URL below into your web
-                                                                browser.</p>
+                                                                browser or you can directly click the URL.</p>
                                                             <p class=""f-fallback sub"">{1}</p>
                                                         </td>
                                                     </tr>
@@ -575,7 +575,7 @@ public class EmailSender : IEmailSender
                                     <tr>
                                         <td class=""content-cell"" align=""center"">
                                             <p class=""f-fallback sub align-center"">
-                                                {5} ©. All rights reserved.
+                                                {5} © All rights reserved.
                                                 <br>FPT University
                                                 <br>Da Nang, Vietnam
                                             </p>
