@@ -121,7 +121,7 @@ public class AccountController : ControllerBase
         var result = await _userManager.ConfirmEmailAsync(user, token);
         if (result.Succeeded)
         {
-            return Redirect($"{_frontendUrl}/verify-success");
+            return Redirect($"{_frontendUrl}/verify-success?verifiedEmail={Uri.EscapeDataString(user.Email!)}");
         }
 
         return BadRequest(LoginConstant.EmailNotConfirmed);
@@ -248,6 +248,7 @@ public class AccountController : ControllerBase
         return Ok();
     }
     
+    [Authorize(AuthenticationSchemes = "MyCookie")]
     [HttpPost("logout")]
     public async Task<IActionResult> Logout()
     {
@@ -256,14 +257,14 @@ public class AccountController : ControllerBase
         try
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            
+
             if (string.IsNullOrEmpty(userId))
             {
                 response.Success = false;
                 response.Message = "User not found.";
                 return BadRequest(response);
             }
-            
+
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null)
             {
@@ -271,10 +272,10 @@ public class AccountController : ControllerBase
                 response.Message = LoginConstant.AccountNotFound;
                 return BadRequest(response);
             }
-            
+
             // Sign out the user
             await _accountServices.Logout(user);
-            
+
             response.Success = true;
             response.Message = LoginConstant.LogoutSuccess;
             return Ok(response);
