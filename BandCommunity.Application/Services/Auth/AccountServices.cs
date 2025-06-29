@@ -7,6 +7,8 @@ using BandCommunity.Domain.Interfaces;
 using BandCommunity.Infrastructure.Auth;
 using BandCommunity.Shared.Constant;
 using BandCommunity.Shared.Exceptions;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using StackExchange.Redis;
@@ -22,8 +24,8 @@ public class AccountServices : IAccountServices
     private readonly IEmailSender _emailSender;
     private readonly IDatabase _redisDatabase;
     private readonly TimeSpan _tokenExpiryTime;
-    
-    private const string RedisPasswordResetPrefix = "password_reset:";
+    private readonly IHttpContextAccessor _httpContextAccessor;
+    private const string RedisPasswordResetPrefix = "reset-password:";
 
     public AccountServices(
         IAuthTokenProcess authTokenProcess,
@@ -31,7 +33,8 @@ public class AccountServices : IAccountServices
         SignInManager<User> signInManager,
         IUserRepository userRepository,
         IEmailSender emailSender,
-        IDatabase redisDatabase)
+        IDatabase redisDatabase,
+        IHttpContextAccessor httpContextAccessor)
     {
         _authTokenProcess = authTokenProcess;
         _userManager = userManager;
@@ -40,6 +43,7 @@ public class AccountServices : IAccountServices
         _emailSender = emailSender;
         _redisDatabase = redisDatabase;
         _tokenExpiryTime = TimeSpan.FromMinutes(int.Parse(Environment.GetEnvironmentVariable("JWT_EXPIRY_MINUTES") ?? "15"));
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public async Task LoginWithGoogle(ClaimsPrincipal? claimsPrincipal)
@@ -100,6 +104,20 @@ public class AccountServices : IAccountServices
                 await _signInManager.SignInAsync(user, isPersistent: false);
             }
         }
+        
+        //* Create claims for the user
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Email, user.Email!),
+            new Claim(ClaimTypes.Name, user.UserName!),
+            new Claim("ProfilePictureUrl", user.ProfilePictureUrl ?? string.Empty)
+        };
+        
+        var identity = new ClaimsIdentity(claims, "MyCookie");
+        var principal = new ClaimsPrincipal(identity);
+        
+        await _httpContextAccessor.HttpContext!.SignInAsync("MyCookie", principal);
     }
 
     public async Task<User> CreateAccount(RegisterRequest request)
@@ -137,7 +155,7 @@ public class AccountServices : IAccountServices
             var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
             var encodedToken = WebUtility.UrlEncode(token);
             
-            string confirmationLink = $"{Environment.GetEnvironmentVariable("BACKEND_URL")}/auth/confirm-email?token={encodedToken}&email={WebUtility.UrlEncode(user.Email)}";
+            string confirmationLink = $"{Environment.GetEnvironmentVariable("BACKEND_URL")}/api/Account/confirm-email?userId={user.Id}&token={encodedToken}";
             
             await _emailSender.SendEmailAsync(user.Email, "Verify your email", confirmationLink);
             
@@ -184,7 +202,21 @@ public class AccountServices : IAccountServices
         await _userManager.UpdateAsync(user);
         _authTokenProcess.WriteAuthTokenAsHttpOnlyCookie("ACCESS_TOKEN", jwtToken, expiry);
         _authTokenProcess.WriteAuthTokenAsHttpOnlyCookie("REFRESH_TOKEN", refreshToken, refreshTokenExpiryTime);
-
+        
+        //* Create claims for the user
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Email, user.Email!),
+            new Claim(ClaimTypes.Name, user.UserName!),
+            new Claim("ProfilePictureUrl", user.ProfilePictureUrl ?? string.Empty)
+        };
+        
+        var identity = new ClaimsIdentity(claims, "MyCookie");
+        var principal = new ClaimsPrincipal(identity);
+        
+        await _httpContextAccessor.HttpContext!.SignInAsync("MyCookie", principal);
+        
         return user;
     }
 
@@ -195,9 +227,7 @@ public class AccountServices : IAccountServices
         if (user != null && await _userManager.IsEmailConfirmedAsync(user))
         {
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-            var encodedToken = WebUtility.UrlEncode(token);
-            
-            var redisKey = $"{RedisPasswordResetPrefix}{encodedToken}";
+            var redisKey = $"{RedisPasswordResetPrefix}{token}";
 
             try
             {
@@ -206,8 +236,9 @@ public class AccountServices : IAccountServices
 
                 if (result)
                 {
+                    var encodedToken = Uri.EscapeDataString(token);
                     var resetLink =
-                        $"{Environment.GetEnvironmentVariable("BACKEND_URL")}/auth/reset-password?token={encodedToken}&email={WebUtility.UrlEncode(user.Email)}";
+                        $"{Environment.GetEnvironmentVariable("FRONTEND_URL")}/reset-password?token={encodedToken}";
 
                     await _emailSender.SendEmailAsync(user.Email!, "Reset your password", resetLink);
                 }
@@ -271,18 +302,8 @@ public class AccountServices : IAccountServices
         {
             throw new GlobalException("User not found", LoginConstant.AccountNotFound);
         }
-
-        string decodedToken;
-        try
-        {
-            decodedToken = WebUtility.UrlDecode(request.Token);
-        }
-        catch (Exception ex)
-        {
-            throw new GlobalException("Failed to decode token", LoginConstant.ResetPasswordFailed, ex);
-        }
         
-        IdentityResult result = await _userManager.ResetPasswordAsync(user, decodedToken, request.NewPassword);
+        IdentityResult result = await _userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
         
         if (result.Succeeded)
         {
@@ -310,7 +331,7 @@ public class AccountServices : IAccountServices
             var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
             var encodedToken = WebUtility.UrlEncode(token);
             
-            string confirmationLink = $"{Environment.GetEnvironmentVariable("BACKEND_URL")}/auth/confirm-email?token={encodedToken}&email={WebUtility.UrlEncode(user.Email)}";
+            string confirmationLink = $"{Environment.GetEnvironmentVariable("BACKEND_URL")}/api/Account/confirm-email?userId={user.Id}&token={encodedToken}";
             await _emailSender.SendEmailAsync(user.Email!, "Verify your email", confirmationLink);
         }
         else
