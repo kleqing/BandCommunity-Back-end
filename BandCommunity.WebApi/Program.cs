@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using BandCommunity.Application.Services.Auth;
 using BandCommunity.Application.Services.Email;
 using BandCommunity.Domain.Entities;
@@ -36,7 +37,7 @@ public class Program
         builder.Services.AddScoped<IAccountServices, AccountServices>();
         builder.Services.AddScoped<IUserRepository, UserRepository>();
         builder.Services.AddTransient<IEmailSender, EmailSender>();
-        
+
         builder.Services.AddIdentity<User, IdentityRole<Guid>>()
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
@@ -80,26 +81,39 @@ public class Program
                         .AllowCredentials();
                 });
         });
-        
-        //* Google Authentication
-        builder.Services.AddAuthentication()
-            .AddCookie()
+
+        //* Authentication
+        builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultScheme = "MyCookie"; //* Default scheme for cookie authentication
+            })
+            .AddCookie("MyCookie", options =>
+            {
+                options.Cookie.Name = "ACCESS_TOKEN";
+                options.LoginPath = "/api/Account/login";
+                options.LogoutPath = "/api/Account/logout";
+                options.Cookie.HttpOnly = true;
+                options.Cookie.SameSite = SameSiteMode.None;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Use Always for production
+            })
             .AddGoogle(options =>
             {
-                var clientId = options.ClientId = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID") ?? String.Empty;
+                var clientId = options.ClientId =
+                    Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID") ?? String.Empty;
 
                 if (string.IsNullOrEmpty(clientId))
                 {
                     throw new Exception("Google Client ID is not set in environment variables.");
                 }
-                
-                var clientSecret = options.ClientSecret = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET") ?? String.Empty;
-                
+
+                var clientSecret = options.ClientSecret =
+                    Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET") ?? String.Empty;
+
                 if (string.IsNullOrEmpty(clientSecret))
                 {
                     throw new Exception("Google Client Secret is not set in environment variables.");
                 }
-                
+
                 options.ClientId = clientId;
                 options.ClientSecret = clientSecret;
                 options.ClaimActions.MapJsonKey("profile_picture", "profile_picture");
@@ -111,7 +125,7 @@ public class Program
         builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
         {
             var redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING");
-    
+
             if (string.IsNullOrWhiteSpace(redisConnectionString))
             {
                 throw new InvalidOperationException("Redis connection string is not set in environment variables.");
@@ -130,23 +144,25 @@ public class Program
             }
         });
 
-        
+
         builder.Services.AddScoped<IDatabase>(sp =>
         {
             var connectionMultiplexer = sp.GetRequiredService<IConnectionMultiplexer>();
             return connectionMultiplexer.GetDatabase();
         });
-        
+
         //* Email Confirmation
-        builder.Services.Configure<IdentityOptions>(options =>
-        {
-            options.SignIn.RequireConfirmedEmail = true;
-        });
-        
+        builder.Services.Configure<IdentityOptions>(options => { options.SignIn.RequireConfirmedEmail = true; });
+
         //* Add services to the container.
         builder.Services.AddAuthorization();
         builder.Services.AddHttpContextAccessor();
-        builder.Services.AddControllers();
+        builder.Services.AddControllers()
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase; //* Use original property names
+                options.JsonSerializerOptions.PropertyNameCaseInsensitive  = true; //* Enable case-insensitive property names
+            });
 
         //* Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
@@ -154,7 +170,7 @@ public class Program
         {
             c.SwaggerDoc("v1", new OpenApiInfo { Title = "BandCommunity API", Version = "v1" });
 
-            c.AddSecurityDefinition("Bearer", new  OpenApiSecurityScheme
+            c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
                 Name = "Authorization",
                 Type = SecuritySchemeType.Http,
@@ -163,7 +179,7 @@ public class Program
                 In = ParameterLocation.Header,
                 Description = "Please enter a valid token"
             });
-            
+
             c.AddSecurityRequirement(new OpenApiSecurityRequirement
             {
                 {
@@ -175,7 +191,7 @@ public class Program
                             Id = "Bearer"
                         }
                     },
-                    new string[] {}
+                    new string[] { }
                 }
             });
         });
@@ -188,7 +204,7 @@ public class Program
             app.UseSwagger();
             app.UseSwaggerUI();
         }
-        
+
         //* Seed role 
         using (var scope = app.Services.CreateScope())
         {
@@ -201,7 +217,7 @@ public class Program
 
         app.UseAuthentication();
         app.UseAuthorization();
-        
+
         app.MapControllers();
 
         app.Run();
