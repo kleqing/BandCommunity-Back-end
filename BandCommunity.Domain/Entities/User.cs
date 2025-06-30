@@ -12,6 +12,7 @@ public class User : IdentityUser<Guid>
     public string LastName { get; set; }
     
     [MaxLength(20)] 
+    [Required]
     public override string? UserName { get; set; }
     public DateTime DateOfBirth { get; set; }
     
