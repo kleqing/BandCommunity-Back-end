@@ -15,7 +15,7 @@ using StackExchange.Redis;
 
 namespace BandCommunity.Application.Services.Auth;
 
-public class AccountServices : IAccountServices
+public class AuthorizeService : IAuthorizeService
 {
     private readonly IAuthTokenProcess _authTokenProcess;
     private readonly UserManager<User> _userManager;
@@ -27,7 +27,7 @@ public class AccountServices : IAccountServices
     private readonly IHttpContextAccessor _httpContextAccessor;
     private const string RedisPasswordResetPrefix = "reset-password:";
 
-    public AccountServices(
+    public AuthorizeService(
         IAuthTokenProcess authTokenProcess,
         UserManager<User> userManager,
         SignInManager<User> signInManager,

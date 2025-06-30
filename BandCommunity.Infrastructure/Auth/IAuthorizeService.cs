@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace BandCommunity.Infrastructure.Auth;
 
-public interface IAccountServices
+public interface IAuthorizeService
 {
     Task LoginWithGoogle(ClaimsPrincipal? claimsPrincipal);
     Task<User> CreateAccount(RegisterRequest request);

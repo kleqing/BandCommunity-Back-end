@@ -15,16 +15,16 @@ namespace BandCommunity.WebApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AccountController : ControllerBase
+public class AuthorizeController : ControllerBase
 {
-    private readonly IAccountServices _accountServices;
+    private readonly IAuthorizeService _authorizeService;
     private readonly UserManager<User> _userManager;
 
     private readonly string _frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL") ?? string.Empty;
 
-    public AccountController(IAccountServices accountServices, UserManager<User> userManager)
+    public AuthorizeController(IAuthorizeService authorizeService, UserManager<User> userManager)
     {
-        _accountServices = accountServices;
+        _authorizeService = authorizeService;
         _userManager = userManager;
     }
 
@@ -32,7 +32,7 @@ public class AccountController : ControllerBase
     [AllowAnonymous]
     public IActionResult LoginGoogle(string returnUrl)
     {
-        var redirectUrl = Url.Action(nameof(ExternalLoginCallback), "Account", new { returnUrl });
+        var redirectUrl = Url.Action(nameof(ExternalLoginCallback), "Authorize", new { returnUrl });
         var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
         return Challenge(properties, GoogleDefaults.AuthenticationScheme);
     }
@@ -49,7 +49,7 @@ public class AccountController : ControllerBase
         }
 
         var claimsPrincipal = result.Principal;
-        await _accountServices.LoginWithGoogle(claimsPrincipal);
+        await _authorizeService.LoginWithGoogle(claimsPrincipal);
 
         var email = claimsPrincipal.FindFirst(ClaimTypes.Email)?.Value;
         var name = claimsPrincipal.FindFirst(ClaimTypes.GivenName)?.Value + " " +
@@ -69,7 +69,7 @@ public class AccountController : ControllerBase
 
         try
         {
-            var user = await _accountServices.CreateAccount(request);
+            var user = await _authorizeService.CreateAccount(request);
 
             response.Success = true;
             response.Message = LoginConstant.AccountCreated;
@@ -92,7 +92,7 @@ public class AccountController : ControllerBase
 
         try
         {
-            var user = await _accountServices.Login(request);
+            var user = await _authorizeService.Login(request);
 
             response.Success = true;
             response.Message = LoginConstant.LoginSuccess;
@@ -135,7 +135,7 @@ public class AccountController : ControllerBase
 
         try
         {
-            await _accountServices.InitiatePasswordReset(request.Email);
+            await _authorizeService.InitiatePasswordReset(request.Email);
             response.Success = true;
             response.Message = LoginConstant.SendSuccess;
             return Ok(response);
@@ -160,7 +160,7 @@ public class AccountController : ControllerBase
             return BadRequest(response);
         }
 
-        var isValid = await _accountServices.VerifyPasswordResetToken(token);
+        var isValid = await _authorizeService.VerifyPasswordResetToken(token);
         if (!isValid)
         {
             response.Success = false;
@@ -190,7 +190,7 @@ public class AccountController : ControllerBase
 
         try
         {
-            IdentityResult result = await _accountServices.ResetPassword(request);
+            IdentityResult result = await _authorizeService.ResetPassword(request);
 
             if (result.Succeeded)
             {
@@ -227,7 +227,7 @@ public class AccountController : ControllerBase
                 return BadRequest(response);
             }
 
-            await _accountServices.ResendEmailConfirmation(user);
+            await _authorizeService.ResendEmailConfirmation(user);
             response.Success = true;
             response.Message = LoginConstant.SendSuccess;
             return Ok(response);
@@ -244,7 +244,7 @@ public class AccountController : ControllerBase
     public async Task<IActionResult> RefreshToken()
     {
         var refreshToken = HttpContext.Request.Cookies["REFRESH_TOKEN"];
-        await _accountServices.RefreshToken(refreshToken);
+        await _authorizeService.RefreshToken(refreshToken);
         return Ok();
     }
     
@@ -274,7 +274,7 @@ public class AccountController : ControllerBase
             }
 
             // Sign out the user
-            await _accountServices.Logout(user);
+            await _authorizeService.Logout(user);
 
             response.Success = true;
             response.Message = LoginConstant.LogoutSuccess;

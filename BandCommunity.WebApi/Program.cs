@@ -34,7 +34,7 @@ public class Program
 
         //! IMPORTANT: Add this line to enable lazy loading
         builder.Services.AddScoped<IAuthTokenProcess, AuthTokenProcess>();
-        builder.Services.AddScoped<IAccountServices, AccountServices>();
+        builder.Services.AddScoped<IAuthorizeService, AuthorizeService>();
         builder.Services.AddScoped<IUserRepository, UserRepository>();
         builder.Services.AddTransient<IEmailSender, EmailSender>();
 
