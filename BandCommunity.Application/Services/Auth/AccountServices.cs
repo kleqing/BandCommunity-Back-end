@@ -129,7 +129,13 @@ public class AccountServices : IAccountServices
             {
                 throw new GlobalException("Email already exist", LoginConstant.EmailExists);
             }
-            
+
+            var checkUserNameExist = await _userManager.FindByNameAsync(request.Username);
+            if (checkUserNameExist != null)
+            {
+                throw new GlobalException("Username already exists", LoginConstant.UsernameExists);
+            }
+
             var user = new User
             {
                 Id = new Guid(),
@@ -142,32 +148,33 @@ public class AccountServices : IAccountServices
                 ProfilePictureUrl = request.ProfilePictureUrl,
                 CreatedAt = request.CreatedAt
             };
-            
+
             var result = await _userManager.CreateAsync(user, request.Password);
-            
+
             if (!result.Succeeded)
             {
                 throw new GlobalException("Failed to create user", LoginConstant.CreateAccountFailed);
             }
-            
+
             await _userManager.AddToRoleAsync(user, EntityEnum.SystemRole.User.ToString());
-            
+
             var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
             var encodedToken = WebUtility.UrlEncode(token);
-            
-            string confirmationLink = $"{Environment.GetEnvironmentVariable("BACKEND_URL")}/api/Account/confirm-email?userId={user.Id}&token={encodedToken}";
-            
+
+            string confirmationLink =
+                $"{Environment.GetEnvironmentVariable("BACKEND_URL")}/api/Account/confirm-email?userId={user.Id}&token={encodedToken}";
+
             await _emailSender.SendEmailAsync(user.Email, "Verify your email", confirmationLink);
-            
+
             return user;
+        }
+        catch (GlobalException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
-            if (ex is GlobalException)
-            {
-                throw;
-            }
-            throw new GlobalException("Failed to create account", LoginConstant.CreateAccountFailed, ex);
+            throw new Exception("Failed to create account", ex);
         }
     }
 
