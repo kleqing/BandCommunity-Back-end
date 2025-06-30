@@ -40,19 +40,20 @@ public class EmailSender : IEmailSender
     {
         var year = DateTime.Now.Year;
 
-        string title = string.Empty;
+        string title = "Band Community";
         string buttonText = string.Empty;
         string mainContent = string.Empty;
+        string hiddenContent = string.Empty;
 
         if (subject.Contains("Reset"))
         {
-            title = "Reset password";
+            hiddenContent = "We need to reset your password.";
             buttonText = "Reset my password";
             mainContent = "You recently requested to reset your password for your account. Please use the button below to reset the password.";
         }
         else if (subject.Contains("Verify"))
         {
-            title = "Verify email";
+            hiddenContent = "We need to verify your email.";
             buttonText = "Verify my email";
             mainContent = "You recently requested to verify your email for your account. Please use the button below to verify your email.";
         }
@@ -505,14 +506,14 @@ public class EmailSender : IEmailSender
         </style>
     </head>
     <body>
-        <span class=""preheader"">Use this link to reset your password. The link is only valid for 24 hours.</span>
+        <span class=""preheader"">{6} The link is only valid for 24 hours.</span>
         <table class=""email-wrapper"" width=""100%"" cellpadding=""0"" cellspacing=""0"" role=""presentation"">
             <tr>
                 <td align=""center"">
                     <table class=""email-content"" width=""100%"" cellpadding=""0"" cellspacing=""0"" role=""presentation"">
                         <tr>
                             <td class=""email-masthead"">
-                                <a href=""javascript:void(0)"" class=""f-fallback email-masthead_name"">
+                                <a href=""http://localhost:3000"" class=""f-fallback email-masthead_name"" style=""font-size: 16px; font-weight: bold; color: #A8AAAF; text-decoration: none; text-shadow: 0 1px 0 white;"">
                                     {2}
                                 </a>
                             </td>
@@ -526,7 +527,7 @@ public class EmailSender : IEmailSender
                                     <tr>
                                         <td class=""content-cell"">
                                             <div class=""f-fallback"">
-                                                <h1>Hi {0}!</h1>
+                                                <h1>Hi {0}</h1>
                                                 <p>{4} <strong>The link is only valid for the next 24 hours.</strong></p>
                                                 <!-- Action -->
                                                 <table class=""body-action"" align=""center"" width=""100%"" cellpadding=""0""
@@ -590,7 +591,7 @@ public class EmailSender : IEmailSender
         </table>
     </body>
 </html>"
-            , email, htmlMsg, title, buttonText, mainContent, year);
+            , email, htmlMsg, title, buttonText, mainContent, year, hiddenContent);
         return result;
     }
 }
