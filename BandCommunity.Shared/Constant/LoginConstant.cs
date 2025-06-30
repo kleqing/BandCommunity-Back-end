@@ -14,6 +14,7 @@ public static class LoginConstant
     public static string RefreshTokenFailed = "Refresh token created failed! Please try again.";
     public static string EmailExists = "Email already exists!";
     public static string InvalidToken = "Invalid token!";
+    public static string UsernameExists = "Username already exists!";
     
     //* Success Messages
     public static string LoginSuccess = "Login successful!";
