@@ -4,12 +4,20 @@ Back-end version of Band Community
 
 For front-end version, please visit [BandCommunity-Front-end](https://github.com/kleqing/BandCommunity-Front-end)
 
+## Table of content
+
+- [Installation](#installation)
+- [Usage](#usage)
+- [Structure](#project-structure)
+- [Environment](#environment)
+- [License](#license)
+
 ## Installation
 
 Install [.NET](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) SDK (8.0)
 
 ```csharp
-# Install dotnet ef core (If already installed, skip this section)
+// Install dotnet ef core (If already installed, skip this section)
 dotnet tool install --global dotnet-ef
 ```
 
@@ -23,13 +31,13 @@ git clone https://github.com/kleqing/BandCommunity-Back-end
 Before run the application, make sure you have config the `.env` file first. The file is locate at `BandCommunity.WebApi/.env.template`
 
 ```csharp
-# Restore project
+// Restore project
 dotnet restore
 
-# Build project
+// Build project
 dotnet build
 
-# Create database from model (required dotnet ef core)
+// Create database from model (required dotnet ef core)
 dotnet ef migrations add "Initial" --project BandCommunity.Infrastructure  --startup-project BandCommunity.WebApi --context ApplicationDbContext
 dotnet ef database update --project BandCommunity.Infrastructure  --startup-project BandCommunity.WebApi --context ApplicationDbContext 
 
@@ -77,3 +85,6 @@ dotnet ef database update --project BandCommunity.Infrastructure  --startup-proj
 
 **NOTE: IF YOU PREFER TO USE OTHER SQL THAN POSTGRE, PLEASE REMOVE POSTGRESQL PACKAGE IN THE PROJECT AND USE YOUR OWN!**
 
+## License
+
+This project is licensed under the [MIT License](https://github.com/kleqing/BandCommunity-Back-end/blob/main/LICENSE)
