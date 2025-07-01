@@ -9,7 +9,6 @@ using BandCommunity.Infrastructure.Data;
 using BandCommunity.Application.Services.Role;
 using BandCommunity.Domain.Interfaces;
 using BandCommunity.Repository.Repositories;
-using BandCommunity.WebApi.Middleware;
 using dotenv.net;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
@@ -114,10 +113,10 @@ public class Program
                 {
                     throw new Exception("Google Client Secret is not set in environment variables.");
                 }
-                options.SignInScheme = "MyCookie";
+
                 options.ClientId = clientId;
                 options.ClientSecret = clientSecret;
-                options.ClaimActions.MapJsonKey("picture", "picture", "url");
+                options.ClaimActions.MapJsonKey("picture", "picture");
                 options.SaveTokens = true;
                 options.CallbackPath = "/signin-google";
             });
@@ -216,8 +215,6 @@ public class Program
         app.UseCors(myAllowSpecificOrigins);
         app.UseHttpsRedirection();
 
-        //* Add custom middleware to handle JWT cookies
-        app.UseMiddleware<JwtCookieMiddleware>();
         app.UseAuthentication();
         app.UseAuthorization();
 
