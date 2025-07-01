@@ -4,8 +4,8 @@ using BandCommunity.Domain.DTO.Auth;
 using BandCommunity.Domain.Entities;
 using BandCommunity.Infrastructure.Auth;
 using BandCommunity.Shared.Constant;
+using BandCommunity.Shared.Exceptions;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -18,14 +18,17 @@ namespace BandCommunity.WebApi.Controllers;
 public class AuthorizeController : ControllerBase
 {
     private readonly IAuthorizeService _authorizeService;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly UserManager<User> _userManager;
 
     private readonly string _frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL") ?? string.Empty;
 
-    public AuthorizeController(IAuthorizeService authorizeService, UserManager<User> userManager)
+    public AuthorizeController(IAuthorizeService authorizeService, UserManager<User> userManager,
+        IHttpContextAccessor httpContextAccessor)
     {
         _authorizeService = authorizeService;
         _userManager = userManager;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     [HttpGet("login/google")]
@@ -41,23 +44,34 @@ public class AuthorizeController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> ExternalLoginCallback(string returnUrl)
     {
-        var result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        var result = await HttpContext.AuthenticateAsync("MyCookie");
 
         if (!result.Succeeded)
         {
-            return BadRequest("External authentication failed.");
+            return Redirect($"{returnUrl}?error=AuthenticationFailed");
         }
 
         var claimsPrincipal = result.Principal;
-        await _authorizeService.LoginWithGoogle(claimsPrincipal);
 
-        var email = claimsPrincipal.FindFirst(ClaimTypes.Email)?.Value;
-        var name = claimsPrincipal.FindFirst(ClaimTypes.GivenName)?.Value + " " +
-                   claimsPrincipal.FindFirst(ClaimTypes.Surname)?.Value;
-        var avatar = claimsPrincipal.FindFirst("picture")?.Value;
+        User? user;
+        try
+        {
+            await _authorizeService.LoginWithGoogle(claimsPrincipal);
+            user = _httpContextAccessor.HttpContext.Items["user"] as User;
+        }
+        catch (GlobalException ex)
+        {
+            var errorMessage = Uri.EscapeDataString(ex.Message);
+            return Redirect($"{returnUrl}?error={errorMessage}");
+        }
+
+        // var email = claimsPrincipal.FindFirst(ClaimTypes.Email)?.Value;
+        // var name = claimsPrincipal.FindFirst(ClaimTypes.GivenName)?.Value + " " +
+        //            claimsPrincipal.FindFirst(ClaimTypes.Surname)?.Value;
+        // var avatar = claimsPrincipal.FindFirst("picture")?.Value;
 
         var returnToFrontend =
-            $"{_frontendUrl}?email={Uri.EscapeDataString(email!)}&name={Uri.EscapeDataString(name)}&avatar={Uri.EscapeDataString(avatar!)}";
+            $"{_frontendUrl}?completeProfile=true&email={Uri.EscapeDataString(user!.Email!)}&name={Uri.EscapeDataString(user.UserName!)}&avatar={Uri.EscapeDataString(user.ProfilePictureUrl ?? "")}";
         return Redirect(returnToFrontend);
     }
 
@@ -137,7 +151,7 @@ public class AuthorizeController : ControllerBase
         {
             await _authorizeService.InitiatePasswordReset(request.Email);
             response.Success = true;
-            response.Message = LoginConstant.SendSuccess;
+            response.Message = LoginConstant.SendEmailSuccess;
             return Ok(response);
         }
         catch (Exception ex)
@@ -229,7 +243,7 @@ public class AuthorizeController : ControllerBase
 
             await _authorizeService.ResendEmailConfirmation(user);
             response.Success = true;
-            response.Message = LoginConstant.SendSuccess;
+            response.Message = LoginConstant.SendEmailSuccess;
             return Ok(response);
         }
         catch (Exception ex)
@@ -247,7 +261,7 @@ public class AuthorizeController : ControllerBase
         await _authorizeService.RefreshToken(refreshToken);
         return Ok();
     }
-    
+
     [Authorize(AuthenticationSchemes = "MyCookie")]
     [HttpPost("logout")]
     public async Task<IActionResult> Logout()
