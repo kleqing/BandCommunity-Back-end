@@ -50,35 +50,55 @@ public class AuthorizeService : IAuthorizeService
     {
         if (claimsPrincipal == null)
         {
-            throw new GlobalException("Claims principal cannot be null", LoginConstant.ClaimPrincipalFailed);
+            throw new GlobalException("Get Claims principal", LoginConstant.ClaimsPrincipalNotNull);
         }
         
         var email = claimsPrincipal.FindFirstValue(ClaimTypes.Email);
         if (email == null)
         {
-            throw new GlobalException("Email claim not found in claims principal", LoginConstant.ClaimPrincipalFailed);
+            throw new GlobalException("Get Claims principal", LoginConstant.ClaimsPrincipalEmailNotFound);
         }
         
         var user = await _userManager.FindByEmailAsync(email);
+
+        //* Add a check to see if the email already registered in the system
+        if (user != null)
+        {
+            throw new GlobalException("Login with Google", LoginConstant.EmailAlreadyRegistered);
+        }
         
         if (user == null)
         {
+            //* Generate a unique username based on the email
+            var baseUserName = email.Split('@')[0];
+            var finalUserName = baseUserName;
+            int surfix = 1;
+            
+            while (await _userManager.FindByNameAsync(finalUserName) != null)
+            {
+                finalUserName = $"{baseUserName}{surfix++}";
+            }
+            
             var newUser = new User
             {
                 Email = email,
-                UserName = email.Split('@')[0],
+                UserName = finalUserName,
                 FirstName = claimsPrincipal.FindFirstValue(ClaimTypes.GivenName) ?? string.Empty,
                 LastName = claimsPrincipal.FindFirstValue(ClaimTypes.Surname) ?? string.Empty,
                 EmailConfirmed = true,
-                ProfilePictureUrl = claimsPrincipal.FindFirstValue("profile_picture") ?? string.Empty,
+                ProfilePictureUrl = claimsPrincipal.FindFirstValue("picture") ?? string.Empty,
+                
+                //* Since Google OAuth does not provide phone number and date of birth, leave them as null or default
+                DateOfBirth = DateTime.MinValue,
+                PhoneNumber = null
             };
             
-            var result = _userManager.CreateAsync(newUser);
+            var result = await _userManager.CreateAsync(newUser);
             await _userManager.AddToRoleAsync(newUser, EntityEnum.SystemRole.User.ToString());
             
-            if (!result.Result.Succeeded)
+            if (!result.Succeeded)
             {
-                throw new GlobalException("Failed to create user from Google login", LoginConstant.CreateAccountFailed);
+                throw new GlobalException("Login with Google", LoginConstant.CreateAccountFailed);
             }
             
             user = newUser;
@@ -89,35 +109,40 @@ public class AuthorizeService : IAuthorizeService
             
             if (!loginResult.Succeeded)
             {
-                throw new GlobalException("Failed to add Google login to user", LoginConstant.LoginFailed);
+                throw new GlobalException("Login with Google", LoginConstant.AddUserToGoogleFailed);
             }
             
-            await _signInManager.SignInAsync(user, isPersistent: false);
+            // await _signInManager.SignInAsync(user, isPersistent: false);
         }
-        else
-        {
-            var login = await _userManager.GetLoginsAsync(user);
-            var googleLogin = login.FirstOrDefault(l => l.LoginProvider == "Google");
-
-            if (googleLogin != null)
-            {
-                await _signInManager.SignInAsync(user, isPersistent: false);
-            }
-        }
+        // else
+        // {
+        //     var login = await _userManager.GetLoginsAsync(user);
+        //     var googleLogin = login.FirstOrDefault(l => l.LoginProvider == "Google");
+        //
+        //     if (googleLogin != null)
+        //     {
+        //         await _signInManager.SignInAsync(user, isPersistent: false);
+        //     }
+        // }
         
         //* Create claims for the user
-        var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Email, user.Email!),
-            new Claim(ClaimTypes.Name, user.UserName!),
-            new Claim("ProfilePictureUrl", user.ProfilePictureUrl ?? string.Empty)
-        };
+        // var claims = new List<Claim>
+        // {
+        //     new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+        //     new Claim(ClaimTypes.Email, user.Email!),
+        //     new Claim(ClaimTypes.Name, user.UserName!),
+        //     new Claim("ProfilePictureUrl", user.ProfilePictureUrl ?? string.Empty)
+        // };
+        //
+        // var identity = new ClaimsIdentity(claims, "MyCookie");
+        // var principal = new ClaimsPrincipal(identity);
+        //
+        // await _httpContextAccessor.HttpContext!.SignInAsync("MyCookie", principal);
         
-        var identity = new ClaimsIdentity(claims, "MyCookie");
-        var principal = new ClaimsPrincipal(identity);
+        var (accessToken, expiry) = _authTokenProcess.GenerateToken(user);
+        _authTokenProcess.WriteAuthTokenAsHttpOnlyCookie("ACCESS_TOKEN", accessToken, expiry);
         
-        await _httpContextAccessor.HttpContext!.SignInAsync("MyCookie", principal);
+        _httpContextAccessor.HttpContext!.Items["user"] = user; //* Store user in HttpContext for later use
     }
 
     public async Task<User> CreateAccount(RegisterRequest request)
@@ -127,13 +152,13 @@ public class AuthorizeService : IAuthorizeService
             var isUserExist = await _userManager.FindByEmailAsync(request.Email);
             if (isUserExist != null)
             {
-                throw new GlobalException("Email already exist", LoginConstant.EmailExists);
+                throw new GlobalException("Register", LoginConstant.EmailExists);
             }
 
             var checkUserNameExist = await _userManager.FindByNameAsync(request.Username);
             if (checkUserNameExist != null)
             {
-                throw new GlobalException("Username already exists", LoginConstant.UsernameExists);
+                throw new GlobalException("Register", LoginConstant.UsernameExists);
             }
 
             var user = new User
@@ -153,7 +178,7 @@ public class AuthorizeService : IAuthorizeService
 
             if (!result.Succeeded)
             {
-                throw new GlobalException("Failed to create user", LoginConstant.CreateAccountFailed);
+                throw new GlobalException("Register", LoginConstant.CreateAccountFailed);
             }
 
             await _userManager.AddToRoleAsync(user, EntityEnum.SystemRole.User.ToString());
@@ -183,20 +208,20 @@ public class AuthorizeService : IAuthorizeService
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user == null)
         {
-            throw new GlobalException("User not found", LoginConstant.AccountNotFound);
+            throw new GlobalException("Login", LoginConstant.AccountNotFound);
         }
         
         var isEmailConfirmed = await _userManager.IsEmailConfirmedAsync(user);
         if (!isEmailConfirmed)
         {
-            throw new GlobalException("Email not confirmed", LoginConstant.EmailNotConfirmed);
+            throw new GlobalException("Login", LoginConstant.EmailNotConfirmed);
         }
         
         var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, false);
         
         if (!result.Succeeded)
         {
-            throw new GlobalException("Invalid password", LoginConstant.InvalidPassword);
+            throw new GlobalException("Login", LoginConstant.InvalidPassword);
         }
         
         var (jwtToken, expiry) = _authTokenProcess.GenerateToken(user);
@@ -251,17 +276,17 @@ public class AuthorizeService : IAuthorizeService
                 }
                 else
                 {
-                    throw new GlobalException("Password reset token already exists", LoginConstant.ResetPasswordFailed);
+                    throw new GlobalException("Reset", LoginConstant.PasswordResetTokenExists);
                 }
             }
             catch (Exception ex)
             {
-                throw new GlobalException("Failed to initiate password reset", LoginConstant.ResetPasswordFailed, ex);
+                throw new GlobalException("Initiate", LoginConstant.PasswordResetFailed, ex);
             }
         }
         else
         {
-            throw new GlobalException("User not found", LoginConstant.AccountNotFound);
+            throw new GlobalException("Find user in database", LoginConstant.AccountNotFound);
         }
     }
 
@@ -279,7 +304,7 @@ public class AuthorizeService : IAuthorizeService
         }
         catch (Exception ex)
         {
-            throw new GlobalException("Failed to verify password reset token", LoginConstant.ResetPasswordFailed, ex);
+            throw new GlobalException("Verify", LoginConstant.PasswordResetTokenInvalid, ex);
         }
     }
 
@@ -294,12 +319,12 @@ public class AuthorizeService : IAuthorizeService
         }
         catch (Exception ex)
         {
-            throw new GlobalException("Failed to retrieve user ID from Redis", LoginConstant.ResetPasswordFailed, ex);
+            throw new GlobalException("Retrieve user", LoginConstant.RedisUserIdNotFound, ex);
         }
         
         if (!userIdValue.HasValue)
         {
-            throw new GlobalException("Invalid or expired password reset token", LoginConstant.ResetPasswordFailed);
+            throw new GlobalException("Validate token", LoginConstant.InvalidPasswordResetToken);
         }
         
         var userId = userIdValue.ToString();
@@ -307,7 +332,7 @@ public class AuthorizeService : IAuthorizeService
         
         if (user == null)
         {
-            throw new GlobalException("User not found", LoginConstant.AccountNotFound);
+            throw new GlobalException("Find user in database", LoginConstant.AccountNotFound);
         }
         
         IdentityResult result = await _userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
@@ -321,12 +346,12 @@ public class AuthorizeService : IAuthorizeService
             }
             catch (Exception ex)
             {
-                throw new GlobalException("Failed to update user password", LoginConstant.ResetPasswordFailed, ex);
+                throw new GlobalException("Update", LoginConstant.UpdatePasswordFailed, ex);
             }
         }
         else
         {
-            throw new GlobalException("Failed to reset password", LoginConstant.ResetPasswordFailed);
+            throw new GlobalException("Reset", LoginConstant.ResetPasswordFailed);
         }
         return result;
     }
@@ -343,7 +368,7 @@ public class AuthorizeService : IAuthorizeService
         }
         else
         {
-            throw new GlobalException("Email already confirmed", LoginConstant.EmailAlreadyConfirmed);
+            throw new GlobalException("Verify", LoginConstant.EmailAlreadyConfirmed);
         }
     }
 
@@ -351,19 +376,19 @@ public class AuthorizeService : IAuthorizeService
     {
         if (string.IsNullOrEmpty(token))
         {
-            throw new GlobalException("Refresh token cannot be null or empty", "RefreshToken");
+            throw new GlobalException("Check token", "Refresh token cannot be null or empty");
         }
 
         var user = await _userRepository.GetUserByRefreshToken(token);
 
         if (user == null)
         {
-            throw new GlobalException("Invalid refresh token", LoginConstant.RefreshTokenFailed);
+            throw new GlobalException("Check token", LoginConstant.InvalidRefreshToken);
         }
 
         if (user.RefreshTokenExpiryTime < DateTime.UtcNow)
         {
-            throw new GlobalException("Refresh token has expired", LoginConstant.RefreshTokenFailed);
+            throw new GlobalException("Check token", LoginConstant.RefreshTokenExpired);
         }
         
         var (jwtToken, expiry) = _authTokenProcess.GenerateToken(user);
