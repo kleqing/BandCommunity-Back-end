@@ -9,6 +9,7 @@
     <ItemGroup>
       <ProjectReference Include="..\BandCommunity.Domain\BandCommunity.Domain.csproj" />
       <ProjectReference Include="..\BandCommunity.Infrastructure\BandCommunity.Infrastructure.csproj" />
+      <ProjectReference Include="..\BandCommunity.Shared\BandCommunity.Shared.csproj" />
     </ItemGroup>
 
 </Project>
