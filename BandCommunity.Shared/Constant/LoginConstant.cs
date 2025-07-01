@@ -23,7 +23,6 @@ public static class LoginConstant
     public static string RefreshTokenExpired = "Refresh token has expired!";
     public static string EmailExists = "Email already exists!";
     public static string InvalidToken = "Invalid token!";
-    public static string EmailAlreadyRegistered = "Email is already registered in system!";
     
     //* Success Messages
     public static string LoginSuccess = "Login successful!";
