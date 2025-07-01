@@ -57,7 +57,7 @@ public class AuthTokenProcess : IAuthTokenProcess
 
     public void WriteAuthTokenAsHttpOnlyCookie(string cookieName, string token, DateTime expiry)
     {
-        _contextAccessor.HttpContext.Response.Cookies.Append(cookieName, token,
+        _contextAccessor.HttpContext?.Response.Cookies.Append(cookieName, token,
             new CookieOptions
             {
                 Expires = expiry,
