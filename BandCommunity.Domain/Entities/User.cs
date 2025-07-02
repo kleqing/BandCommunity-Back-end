@@ -11,12 +11,11 @@ public class User : IdentityUser<Guid>
     [Required]
     public string LastName { get; set; }
     
-    [MaxLength(20)] 
     [Required]
+    [MaxLength(20)] 
     public override string? UserName { get; set; }
     public DateTime DateOfBirth { get; set; }
     
-    [Required]
     [MaxLength(11)]
     [MinLength(10)]
     [RegularExpression(@"^\d{10,11}$", ErrorMessage = "The phone number must contain only digits and be 10–11 digits long.")]

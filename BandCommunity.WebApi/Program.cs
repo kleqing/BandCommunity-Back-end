@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using System.Text.Json;
 using BandCommunity.Application.Services.Auth;
@@ -10,10 +11,11 @@ using BandCommunity.Application.Services.Role;
 using BandCommunity.Domain.Interfaces;
 using BandCommunity.Repository.Repositories;
 using dotenv.net;
-using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
@@ -42,6 +44,7 @@ public class Program
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
 
+        //* Add Bearer Authentication
         builder.Services.Configure<Jwt>(options =>
         {
             options.Secret = Environment.GetEnvironmentVariable("JWT_SECRET")!;
@@ -50,25 +53,7 @@ public class Program
             options.ExpiryInMinutes = int.Parse(Environment.GetEnvironmentVariable("JWT_EXPIRY_MINUTES") ?? "15");
         });
 
-        //* Add Bearer Authentication
-        var jwtOptions = builder.Configuration.GetSection(Jwt.JWTOptionsKey).Get<Jwt>();
-
-        builder.Services.AddAuthentication("Bearer")
-            .AddJwtBearer("Bearer", options =>
-            {
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = jwtOptions!.Issuer,
-                    ValidAudience = jwtOptions.Audience,
-                    IssuerSigningKey = new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(jwtOptions.Secret))
-                };
-            });
-
+        //* CORS Configuration
         var myAllowSpecificOrigins = "AllowAllOrigins";
         builder.Services.AddCors(options =>
         {
@@ -85,44 +70,31 @@ public class Program
         //* Authentication
         builder.Services.AddAuthentication(options =>
             {
-                options.DefaultScheme = "MyCookie"; //* Default scheme for cookie authentication
+                options.DefaultAuthenticateScheme = "Bearer";
+                options.DefaultChallengeScheme = "Bearer";
             })
-            .AddCookie("MyCookie", options =>
-            {
-                options.Cookie.Name = "ACCESS_TOKEN";
-                options.LoginPath = "/api/Account/login";
-                options.LogoutPath = "/api/Account/logout";
-                options.Cookie.HttpOnly = true;
-                options.Cookie.SameSite = SameSiteMode.None;
-                options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Use Always for production
-            })
-            .AddGoogle(options =>
-            {
-                var clientId = options.ClientId =
-                    Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID") ?? String.Empty;
-
-                if (string.IsNullOrEmpty(clientId))
-                {
-                    throw new Exception("Google Client ID is not set in environment variables.");
-                }
-
-                var clientSecret = options.ClientSecret =
-                    Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET") ?? String.Empty;
-
-                if (string.IsNullOrEmpty(clientSecret))
-                {
-                    throw new Exception("Google Client Secret is not set in environment variables.");
-                }
-
-                options.ClientId = clientId;
-                options.ClientSecret = clientSecret;
-                options.ClaimActions.MapJsonKey("profile_picture", "profile_picture");
-                options.SaveTokens = true;
-                options.CallbackPath = "/signin-google";
-            });
+            .AddJwtBearer("Bearer", _ =>
+            { });
         
+        builder.Services.PostConfigure<JwtBearerOptions>("Bearer", options =>
+        {
+            var jwtOptions = builder.Configuration.GetSection("Jwt").Get<Jwt>();
+
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = jwtOptions!.Issuer,
+                ValidAudience = jwtOptions.Audience,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Secret)),
+                ClockSkew = TimeSpan.Zero //* Disable the default 5 minutes clock skew
+            };
+        });
+
         //* Redis Cache
-        builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+        builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
         {
             var redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING");
 
@@ -157,15 +129,19 @@ public class Program
         //* Add services to the container.
         builder.Services.AddAuthorization();
         builder.Services.AddHttpContextAccessor();
+
         builder.Services.AddControllers()
             .AddJsonOptions(options =>
             {
-                options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase; //* Use original property names
-                options.JsonSerializerOptions.PropertyNameCaseInsensitive  = true; //* Enable case-insensitive property names
+                options.JsonSerializerOptions.PropertyNamingPolicy =
+                    JsonNamingPolicy.CamelCase; //* Use original property names
+                options.JsonSerializerOptions.PropertyNameCaseInsensitive =
+                    true; //* Enable case-insensitive property names
             });
 
         //* Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
+        
         builder.Services.AddSwaggerGen(c =>
         {
             c.SwaggerDoc("v1", new OpenApiInfo { Title = "BandCommunity API", Version = "v1" });
@@ -214,6 +190,42 @@ public class Program
 
         app.UseCors(myAllowSpecificOrigins);
         app.UseHttpsRedirection();
+
+        app.UseRouting();
+
+        app.Use(async (context, next) =>
+        {
+            var token = context.Request.Cookies["ACCESS_TOKEN"];
+            if (!string.IsNullOrEmpty(token))
+            {
+                var jwtOptions = context.RequestServices.GetRequiredService<IOptions<Jwt>>().Value;
+
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var validationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = jwtOptions.Issuer,
+                    ValidAudience = jwtOptions.Audience,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Secret)),
+                    ClockSkew = TimeSpan.Zero
+                };
+
+                try
+                {
+                    var principal = tokenHandler.ValidateToken(token, validationParameters, out _);
+                    context.User = principal;
+                }
+                catch
+                {
+                    // Invalid token, do not set context.User
+                }
+            }
+
+            await next();
+        });
 
         app.UseAuthentication();
         app.UseAuthorization();

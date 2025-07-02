@@ -30,7 +30,7 @@ public class AuthTokenProcess : IAuthTokenProcess
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email),
+            new Claim(JwtRegisteredClaimNames.Email, user.Email!),
             new Claim(ClaimTypes.NameIdentifier, user.FirstName + user.LastName)
         };
 
@@ -57,7 +57,7 @@ public class AuthTokenProcess : IAuthTokenProcess
 
     public void WriteAuthTokenAsHttpOnlyCookie(string cookieName, string token, DateTime expiry)
     {
-        _contextAccessor.HttpContext.Response.Cookies.Append(cookieName, token,
+        _contextAccessor.HttpContext?.Response.Cookies.Append(cookieName, token,
             new CookieOptions
             {
                 Expires = expiry,
