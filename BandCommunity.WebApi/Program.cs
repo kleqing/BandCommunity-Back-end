@@ -11,6 +11,7 @@ using BandCommunity.Application.Services.Role;
 using BandCommunity.Domain.Interfaces;
 using BandCommunity.Repository.Repositories;
 using dotenv.net;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
@@ -72,23 +73,25 @@ public class Program
                 options.DefaultAuthenticateScheme = "Bearer";
                 options.DefaultChallengeScheme = "Bearer";
             })
-            .AddJwtBearer("Bearer", options =>
-            {
-                var sp = builder.Services.BuildServiceProvider();
-                var jwtOptions = sp.GetRequiredService<IOptions<Jwt>>().Value;
+            .AddJwtBearer("Bearer", _ =>
+            { });
+        
+        builder.Services.PostConfigure<JwtBearerOptions>("Bearer", options =>
+        {
+            var jwtOptions = builder.Configuration.GetSection("Jwt").Get<Jwt>();
 
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = jwtOptions.Issuer,
-                    ValidAudience = jwtOptions.Audience,
-                    IssuerSigningKey = new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(jwtOptions.Secret))
-                };
-            });
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = jwtOptions!.Issuer,
+                ValidAudience = jwtOptions.Audience,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Secret)),
+                ClockSkew = TimeSpan.Zero //* Disable the default 5 minutes clock skew
+            };
+        });
 
         //* Redis Cache
         builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
@@ -212,7 +215,7 @@ public class Program
 
                 try
                 {
-                    var principal = tokenHandler.ValidateToken(token, validationParameters, out var validatedToken);
+                    var principal = tokenHandler.ValidateToken(token, validationParameters, out _);
                     context.User = principal;
                 }
                 catch
