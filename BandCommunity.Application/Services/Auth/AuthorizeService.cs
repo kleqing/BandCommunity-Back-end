@@ -42,107 +42,9 @@ public class AuthorizeService : IAuthorizeService
         _userRepository = userRepository;
         _emailSender = emailSender;
         _redisDatabase = redisDatabase;
-        _tokenExpiryTime = TimeSpan.FromMinutes(int.Parse(Environment.GetEnvironmentVariable("JWT_EXPIRY_MINUTES") ?? "15"));
+        _tokenExpiryTime =
+            TimeSpan.FromMinutes(int.Parse(Environment.GetEnvironmentVariable("JWT_EXPIRY_MINUTES") ?? "15"));
         _httpContextAccessor = httpContextAccessor;
-    }
-
-    public async Task LoginWithGoogle(ClaimsPrincipal? claimsPrincipal)
-    {
-        if (claimsPrincipal == null)
-        {
-            throw new GlobalException("Get Claims principal", LoginConstant.ClaimsPrincipalNotNull);
-        }
-        
-        var email = claimsPrincipal.FindFirstValue(ClaimTypes.Email);
-        if (email == null)
-        {
-            throw new GlobalException("Get Claims principal", LoginConstant.ClaimsPrincipalEmailNotFound);
-        }
-        
-        var user = await _userManager.FindByEmailAsync(email);
-
-        //* Add a check to see if the email already registered in the system
-        if (user != null)
-        {
-            throw new GlobalException("Login with Google", LoginConstant.EmailAlreadyRegistered);
-        }
-        
-        if (user == null)
-        {
-            //* Generate a unique username based on the email
-            var baseUserName = email.Split('@')[0];
-            var finalUserName = baseUserName;
-            int surfix = 1;
-            
-            while (await _userManager.FindByNameAsync(finalUserName) != null)
-            {
-                finalUserName = $"{baseUserName}{surfix++}";
-            }
-            
-            var newUser = new User
-            {
-                Email = email,
-                UserName = finalUserName,
-                FirstName = claimsPrincipal.FindFirstValue(ClaimTypes.GivenName) ?? string.Empty,
-                LastName = claimsPrincipal.FindFirstValue(ClaimTypes.Surname) ?? string.Empty,
-                EmailConfirmed = true,
-                ProfilePictureUrl = claimsPrincipal.FindFirstValue("picture") ?? string.Empty,
-                
-                //* Since Google OAuth does not provide phone number and date of birth, leave them as null or default
-                DateOfBirth = DateTime.MinValue,
-                PhoneNumber = null
-            };
-            
-            var result = await _userManager.CreateAsync(newUser);
-            await _userManager.AddToRoleAsync(newUser, EntityEnum.SystemRole.User.ToString());
-            
-            if (!result.Succeeded)
-            {
-                throw new GlobalException("Login with Google", LoginConstant.CreateAccountFailed);
-            }
-            
-            user = newUser;
-            
-            var info = new UserLoginInfo("Google", claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty, "Google");
-            
-            var loginResult = await _userManager.AddLoginAsync(newUser, info);
-            
-            if (!loginResult.Succeeded)
-            {
-                throw new GlobalException("Login with Google", LoginConstant.AddUserToGoogleFailed);
-            }
-            
-            // await _signInManager.SignInAsync(user, isPersistent: false);
-        }
-        // else
-        // {
-        //     var login = await _userManager.GetLoginsAsync(user);
-        //     var googleLogin = login.FirstOrDefault(l => l.LoginProvider == "Google");
-        //
-        //     if (googleLogin != null)
-        //     {
-        //         await _signInManager.SignInAsync(user, isPersistent: false);
-        //     }
-        // }
-        
-        //* Create claims for the user
-        // var claims = new List<Claim>
-        // {
-        //     new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-        //     new Claim(ClaimTypes.Email, user.Email!),
-        //     new Claim(ClaimTypes.Name, user.UserName!),
-        //     new Claim("ProfilePictureUrl", user.ProfilePictureUrl ?? string.Empty)
-        // };
-        //
-        // var identity = new ClaimsIdentity(claims, "MyCookie");
-        // var principal = new ClaimsPrincipal(identity);
-        //
-        // await _httpContextAccessor.HttpContext!.SignInAsync("MyCookie", principal);
-        
-        var (accessToken, expiry) = _authTokenProcess.GenerateToken(user);
-        _authTokenProcess.WriteAuthTokenAsHttpOnlyCookie("ACCESS_TOKEN", accessToken, expiry);
-        
-        _httpContextAccessor.HttpContext!.Items["user"] = user; //* Store user in HttpContext for later use
     }
 
     public async Task<User> CreateAccount(RegisterRequest request)
@@ -187,7 +89,7 @@ public class AuthorizeService : IAuthorizeService
             var encodedToken = WebUtility.UrlEncode(token);
 
             string confirmationLink =
-                $"{Environment.GetEnvironmentVariable("BACKEND_URL")}/api/Account/confirm-email?userId={user.Id}&token={encodedToken}";
+                $"{Environment.GetEnvironmentVariable("BACKEND_URL")}/api/Authorize/confirm-email?userId={user.Id}&token={encodedToken}";
 
             await _emailSender.SendEmailAsync(user.Email, "Verify your email", confirmationLink);
 
@@ -210,44 +112,30 @@ public class AuthorizeService : IAuthorizeService
         {
             throw new GlobalException("Login", LoginConstant.AccountNotFound);
         }
-        
+
         var isEmailConfirmed = await _userManager.IsEmailConfirmedAsync(user);
         if (!isEmailConfirmed)
         {
             throw new GlobalException("Login", LoginConstant.EmailNotConfirmed);
         }
-        
+
         var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, false);
-        
+
         if (!result.Succeeded)
         {
             throw new GlobalException("Login", LoginConstant.InvalidPassword);
         }
-        
+
         var (jwtToken, expiry) = _authTokenProcess.GenerateToken(user);
         var refreshToken = _authTokenProcess.GenerateRefreshToken();
         var refreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
-        
+
         user.RefreshToken = refreshToken;
         user.RefreshTokenExpiryTime = refreshTokenExpiryTime;
-        
+
         await _userManager.UpdateAsync(user);
         _authTokenProcess.WriteAuthTokenAsHttpOnlyCookie("ACCESS_TOKEN", jwtToken, expiry);
         _authTokenProcess.WriteAuthTokenAsHttpOnlyCookie("REFRESH_TOKEN", refreshToken, refreshTokenExpiryTime);
-        
-        //* Create claims for the user
-        var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Email, user.Email!),
-            new Claim(ClaimTypes.Name, user.UserName!),
-            new Claim("ProfilePictureUrl", user.ProfilePictureUrl ?? string.Empty)
-        };
-        
-        var identity = new ClaimsIdentity(claims, "MyCookie");
-        var principal = new ClaimsPrincipal(identity);
-        
-        await _httpContextAccessor.HttpContext!.SignInAsync("MyCookie", principal);
         
         return user;
     }
@@ -296,7 +184,7 @@ public class AuthorizeService : IAuthorizeService
         {
             return false;
         }
-        
+
         var redisKey = $"{RedisPasswordResetPrefix}{token}";
         try
         {
@@ -321,22 +209,22 @@ public class AuthorizeService : IAuthorizeService
         {
             throw new GlobalException("Retrieve user", LoginConstant.RedisUserIdNotFound, ex);
         }
-        
+
         if (!userIdValue.HasValue)
         {
             throw new GlobalException("Validate token", LoginConstant.InvalidPasswordResetToken);
         }
-        
+
         var userId = userIdValue.ToString();
         var user = await _userManager.FindByIdAsync(userId);
-        
+
         if (user == null)
         {
             throw new GlobalException("Find user in database", LoginConstant.AccountNotFound);
         }
-        
+
         IdentityResult result = await _userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
-        
+
         if (result.Succeeded)
         {
             try
@@ -353,6 +241,7 @@ public class AuthorizeService : IAuthorizeService
         {
             throw new GlobalException("Reset", LoginConstant.ResetPasswordFailed);
         }
+
         return result;
     }
 
@@ -362,8 +251,9 @@ public class AuthorizeService : IAuthorizeService
         {
             var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
             var encodedToken = WebUtility.UrlEncode(token);
-            
-            string confirmationLink = $"{Environment.GetEnvironmentVariable("BACKEND_URL")}/api/Account/confirm-email?userId={user.Id}&token={encodedToken}";
+
+            string confirmationLink =
+                $"{Environment.GetEnvironmentVariable("BACKEND_URL")}/api/Authorize/confirm-email?userId={user.Id}&token={encodedToken}";
             await _emailSender.SendEmailAsync(user.Email!, "Verify your email", confirmationLink);
         }
         else
@@ -390,14 +280,14 @@ public class AuthorizeService : IAuthorizeService
         {
             throw new GlobalException("Check token", LoginConstant.RefreshTokenExpired);
         }
-        
+
         var (jwtToken, expiry) = _authTokenProcess.GenerateToken(user);
         var refreshToken = _authTokenProcess.GenerateRefreshToken();
         var refreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
-        
+
         user.RefreshToken = refreshToken;
         user.RefreshTokenExpiryTime = refreshTokenExpiryTime;
-        
+
         await _userManager.UpdateAsync(user);
         _authTokenProcess.WriteAuthTokenAsHttpOnlyCookie("ACCESS_TOKEN", jwtToken, expiry);
         _authTokenProcess.WriteAuthTokenAsHttpOnlyCookie("REFRESH_TOKEN", refreshToken, refreshTokenExpiryTime);
@@ -408,10 +298,8 @@ public class AuthorizeService : IAuthorizeService
         user.RefreshToken = null;
         user.RefreshTokenExpiryTime = null;
         await _userManager.UpdateAsync(user);
-        
+
         _authTokenProcess.DeleteAuthTokenCookie("ACCESS_TOKEN");
         _authTokenProcess.DeleteAuthTokenCookie("REFRESH_TOKEN");
-        
-        await _signInManager.SignOutAsync();
     }
 }

@@ -4,9 +4,6 @@ using BandCommunity.Domain.DTO.Auth;
 using BandCommunity.Domain.Entities;
 using BandCommunity.Infrastructure.Auth;
 using BandCommunity.Shared.Constant;
-using BandCommunity.Shared.Exceptions;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -18,61 +15,14 @@ namespace BandCommunity.WebApi.Controllers;
 public class AuthorizeController : ControllerBase
 {
     private readonly IAuthorizeService _authorizeService;
-    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly UserManager<User> _userManager;
 
     private readonly string _frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL") ?? string.Empty;
 
-    public AuthorizeController(IAuthorizeService authorizeService, UserManager<User> userManager,
-        IHttpContextAccessor httpContextAccessor)
+    public AuthorizeController(IAuthorizeService authorizeService, UserManager<User> userManager)
     {
         _authorizeService = authorizeService;
         _userManager = userManager;
-        _httpContextAccessor = httpContextAccessor;
-    }
-
-    [HttpGet("login/google")]
-    [AllowAnonymous]
-    public IActionResult LoginGoogle(string returnUrl)
-    {
-        var redirectUrl = Url.Action(nameof(ExternalLoginCallback), "Authorize", new { returnUrl });
-        var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
-        return Challenge(properties, GoogleDefaults.AuthenticationScheme);
-    }
-
-    [HttpGet("login/google/callback")]
-    [AllowAnonymous]
-    public async Task<IActionResult> ExternalLoginCallback(string returnUrl)
-    {
-        var result = await HttpContext.AuthenticateAsync("MyCookie");
-
-        if (!result.Succeeded)
-        {
-            return Redirect($"{returnUrl}?error=AuthenticationFailed");
-        }
-
-        var claimsPrincipal = result.Principal;
-
-        User? user;
-        try
-        {
-            await _authorizeService.LoginWithGoogle(claimsPrincipal);
-            user = _httpContextAccessor.HttpContext.Items["user"] as User;
-        }
-        catch (GlobalException ex)
-        {
-            var errorMessage = Uri.EscapeDataString(ex.Message);
-            return Redirect($"{returnUrl}?error={errorMessage}");
-        }
-
-        // var email = claimsPrincipal.FindFirst(ClaimTypes.Email)?.Value;
-        // var name = claimsPrincipal.FindFirst(ClaimTypes.GivenName)?.Value + " " +
-        //            claimsPrincipal.FindFirst(ClaimTypes.Surname)?.Value;
-        // var avatar = claimsPrincipal.FindFirst("picture")?.Value;
-
-        var returnToFrontend =
-            $"{_frontendUrl}?completeProfile=true&email={Uri.EscapeDataString(user!.Email!)}&name={Uri.EscapeDataString(user.UserName!)}&avatar={Uri.EscapeDataString(user.ProfilePictureUrl ?? "")}";
-        return Redirect(returnToFrontend);
     }
 
     [HttpPost("create-account")]
@@ -261,8 +211,8 @@ public class AuthorizeController : ControllerBase
         await _authorizeService.RefreshToken(refreshToken);
         return Ok();
     }
-
-    [Authorize(AuthenticationSchemes = "MyCookie")]
+    
+    [Authorize]
     [HttpPost("logout")]
     public async Task<IActionResult> Logout()
     {
