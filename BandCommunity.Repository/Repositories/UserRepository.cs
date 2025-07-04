@@ -4,7 +4,6 @@ using BandCommunity.Domain.Interfaces;
 using BandCommunity.Infrastructure.Data;
 using BandCommunity.Shared.Constant;
 using BandCommunity.Shared.Exceptions;
-using BandCommunity.Shared.Helper;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,24 +26,15 @@ public class UserRepository : IUserRepository
         return user;
     }
 
-    public async Task<User?> UpdateBasicUserInformation(BasicInfoRequest request, Guid userId)
+    public async Task<User?> GetCurrentUserInformation(BasicInfoRequest request)
     {
-        var existingUser = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId);
-        if (existingUser == null)
+        var user = await _context.Users.FirstOrDefaultAsync(x => x.Email == request.Email);
+        
+        if (user == null)
         {
-            return null;
+            throw new GlobalException(UserConstant.UserNotFound);
         }
 
-        existingUser.DateOfBirth = request.DateOfBirth.EnsureUtc();
-        existingUser.PhoneNumber = request.PhoneNumber;
-
-        var result = await _userManager.UpdateAsync(existingUser);
-
-        if (!result.Succeeded)
-        {
-            throw new GlobalException("Update", UserConstant.UserNotFound);
-        }
-
-        return existingUser;
+        return user;
     }
 }
