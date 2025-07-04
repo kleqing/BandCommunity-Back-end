@@ -8,4 +8,5 @@ public static class UserConstant
 
     //* SUCCESS MESSAGES
     public static string UserInformationUpdated = "User information updated successfully.";
+    public static string UserFound = "User found successfully.";
 }
