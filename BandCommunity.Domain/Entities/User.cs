@@ -20,6 +20,8 @@ public class User : IdentityUser<Guid>
     [MinLength(10)]
     [RegularExpression(@"^\d{10,11}$", ErrorMessage = "The phone number must contain only digits and be 10–11 digits long.")]
     public override string? PhoneNumber { get; set; }
+    
+    public string? Address { get; set; }
 
     [MaxLength(150)]
     public string? Bio { get; set; }
