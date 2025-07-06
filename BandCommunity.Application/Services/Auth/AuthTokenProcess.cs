@@ -31,7 +31,7 @@ public class AuthTokenProcess : IAuthTokenProcess
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim(JwtRegisteredClaimNames.Email, user.Email!),
-            new Claim(ClaimTypes.NameIdentifier, user.FirstName + user.LastName + user.Id)
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()) //* Set the NameIdentifier claim to the user's ID
         };
 
         var expires = DateTime.UtcNow.AddMinutes(_jwt.ExpiryInMinutes);
