@@ -10,6 +10,7 @@ using BandCommunity.Infrastructure.Data;
 using BandCommunity.Application.Services.Role;
 using BandCommunity.Domain.Interfaces;
 using BandCommunity.Repository.Repositories;
+using BandCommunity.Shared.Utility;
 using dotenv.net;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -38,6 +39,7 @@ public class Program
         builder.Services.AddScoped<IAuthorizeService, AuthorizeService>();
         builder.Services.AddScoped<IUserRepository, UserRepository>();
         builder.Services.AddTransient<IEmailSender, EmailSender>();
+        builder.Services.AddHttpClient<CountryStateService>();
 
         builder.Services.AddIdentity<User, IdentityRole<Guid>>()
             .AddEntityFrameworkStores<ApplicationDbContext>()

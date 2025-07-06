@@ -21,4 +21,8 @@
       <ProjectReference Include="..\BandCommunity.Shared\BandCommunity.Shared.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Services\Other\" />
+    </ItemGroup>
+
 </Project>
