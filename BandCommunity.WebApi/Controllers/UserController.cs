@@ -20,7 +20,7 @@ public class UserController : ControllerBase
         _userRepository = userRepository;
     }
 
-    [HttpPost("current-user")]
+    [HttpPost("fetch-current-user-data")]
     [Authorize]
     public async Task<IActionResult> GetCurrentUser([FromBody] BasicInfoRequest request)
     {
