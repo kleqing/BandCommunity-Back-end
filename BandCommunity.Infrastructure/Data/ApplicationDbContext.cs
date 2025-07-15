@@ -34,7 +34,6 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
     public DbSet<PostReaction> PostReactions { get; set; }
     public DbSet<Report> Reports { get; set; }
     public DbSet<Share> Shares { get; set; }
-    public DbSet<User> Users { get; set; }
     public DbSet<UserRestriction> UserRestrictions { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
