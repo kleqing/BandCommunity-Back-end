@@ -10,5 +10,5 @@ public class History
     public EntityEnum.EntitiesType ContentType { get; set; }
     public DateTime ViewedAt { get; set; } = DateTime.UtcNow;
     
-    public virtual User User { get; set; }
+    public virtual User User { get; set; } = null!;
 }

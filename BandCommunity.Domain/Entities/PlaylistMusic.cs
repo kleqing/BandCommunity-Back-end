@@ -7,6 +7,6 @@ public class PlaylistMusic
     public Guid MusicId { get; set; }
     public DateTime AddedAt { get; set; } = DateTime.UtcNow;
     
-    public virtual Playlist Playlist { get; set; }
-    public virtual Music Music { get; set; }
+    public virtual Playlist Playlist { get; set; } = null!;
+    public virtual Music Music { get; set; } = null!;
 }

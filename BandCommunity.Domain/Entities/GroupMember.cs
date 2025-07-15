@@ -10,6 +10,6 @@ public class GroupMember
     public EntityEnum.GroupRole Role { get; set; }
     public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
     
-    public virtual User User { get; set; }
-    public virtual Groups Group { get; set; }
+    public virtual User User { get; set; } = null!;
+    public virtual Groups Group { get; set; } = null!;
 }

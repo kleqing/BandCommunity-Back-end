@@ -1,6 +1,6 @@
 ﻿using System.Security.Claims;
-using BandCommunity.Domain.DTO.Auth;
 using BandCommunity.Domain.Entities;
+using BandCommunity.Domain.Models.Auth;
 using Microsoft.AspNetCore.Identity;
 
 namespace BandCommunity.Infrastructure.Auth;

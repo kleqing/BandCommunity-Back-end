@@ -10,5 +10,5 @@ public class Share
     public EntityEnum.EntitiesType ContentType { get; set; }
     public DateTime SharedAt { get; set; } = DateTime.UtcNow;
     
-    public virtual User User { get; set; }
+    public virtual User User { get; set; } = null!;
 }

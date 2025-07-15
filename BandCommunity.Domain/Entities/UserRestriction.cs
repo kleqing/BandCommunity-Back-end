@@ -13,6 +13,6 @@ public class UserRestriction
     public DateTime ExpireAt { get; set; }
     public DateTime CreatedAt { get; set; }
     
-    public virtual User User { get; set; }
-    public virtual ICollection<Appeal> Appeal { get; set; }
+     public virtual User User { get; set; } = null!;
+    public virtual ICollection<Appeal> Appeal { get; set; } = null!;
 }

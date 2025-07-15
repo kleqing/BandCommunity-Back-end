@@ -14,7 +14,7 @@ For front-end version, please visit [BandCommunity-Front-end](https://github.com
 
 ## Installation
 
-Install [.NET](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) SDK (8.0)
+The project required [.NET](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) SDK 8
 
 ```csharp
 // Install dotnet ef core (If already installed, skip this section)
@@ -49,22 +49,23 @@ dotnet ef database update --project BandCommunity.Infrastructure  --startup-proj
 ├── Application
 │   ├── Common // Response data
 │   └── Services // Services for the application
-│       ├── Auth // Authorization
-│       ├── Email // Email sender
-│       └── Role // Seed role (For .NET Identity)
+│       ├── Auth 
+│       ├── Email 
+│       └── Role 
 ├── Domain
 │   ├── DTO // Request data
 │   │   └── Auth 
-│   ├── Entities // Models for the system
+│   ├── Entities // Entities of the system
 │   ├── Enums 
-│   ├── Interfaces // Inheritors from  Repository
-│   └── JWT // Json Web Token
+│   ├── Interfaces // Inheritors from Infrastructure.Repositories
+│   ├── JWT // Json Web Token
+│   └── Models // Custom request/response data
+│       └── Auth
 ├── Infrastructure
-│   ├── Auth // Interfaces of Application
+│   ├── Auth // Interfaces of Application.Services
 │   ├── Data // DbContext
-│   └── Migrations // Migrate from context
-├── Repository
-│   └── Repositories
+│   ├── Migrations 
+│   └── Repositories // Repository 
 ├── Shared
 │   ├── Constant
 │   ├── Exceptions // Throw exception messages

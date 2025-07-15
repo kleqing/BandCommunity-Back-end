@@ -9,11 +9,11 @@ public class Groups
     public Guid CreatorId { get; set; }
     
     [Required]
-    public string GroupName { get; set; }
-    public string? GroupDescription { get; set; }
+    public string GroupName { get; set; } = null!;
+    public string? GroupDescription { get; set; } = null!;
     public EntityEnum.VisibilityStatus Visibility { get; set; }
     public DateTime CreatedDate { get; set; }
     
-    public virtual ICollection<GroupMember> GroupMembers { get; set; }
-    public virtual User User { get; set; }
+    public virtual ICollection<GroupMember> GroupMembers { get; set; } = null!;
+    public virtual User User { get; set; } = null!;
 }

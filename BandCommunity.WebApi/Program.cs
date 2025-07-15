@@ -9,13 +9,13 @@ using BandCommunity.Infrastructure.Auth;
 using BandCommunity.Infrastructure.Data;
 using BandCommunity.Application.Services.Role;
 using BandCommunity.Domain.Interfaces;
-using BandCommunity.Repository.Repositories;
+using BandCommunity.Infrastructure.Repositories;
+using BandCommunity.Shared.Utility;
 using dotenv.net;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
@@ -39,6 +39,7 @@ public class Program
         builder.Services.AddScoped<IAuthorizeService, AuthorizeService>();
         builder.Services.AddScoped<IUserRepository, UserRepository>();
         builder.Services.AddTransient<IEmailSender, EmailSender>();
+        builder.Services.AddHttpClient<CountryStateService>();
 
         builder.Services.AddIdentity<User, IdentityRole<Guid>>()
             .AddEntityFrameworkStores<ApplicationDbContext>()
@@ -78,7 +79,9 @@ public class Program
         
         builder.Services.PostConfigure<JwtBearerOptions>("Bearer", options =>
         {
-            var jwtOptions = builder.Configuration.GetSection("Jwt").Get<Jwt>();
+            var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER")!;
+            var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE")!;
+            var secret = Environment.GetEnvironmentVariable("JWT_SECRET")!;
 
             options.TokenValidationParameters = new TokenValidationParameters
             {
@@ -86,10 +89,11 @@ public class Program
                 ValidateAudience = true,
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
-                ValidIssuer = jwtOptions!.Issuer,
-                ValidAudience = jwtOptions.Audience,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Secret)),
-                ClockSkew = TimeSpan.Zero //* Disable the default 5 minutes clock skew
+                ValidIssuer = issuer,
+                ValidAudience = audience,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret)),
+                ClockSkew = TimeSpan.Zero, //* Disable the default 5-minute clock skew
+                RequireExpirationTime = true //* Require the token to have an expiration time
             };
         });
 
@@ -193,12 +197,18 @@ public class Program
 
         app.UseRouting();
 
+        //* Middleware to handle JWT token validation
         app.Use(async (context, next) =>
         {
             var token = context.Request.Cookies["ACCESS_TOKEN"];
             if (!string.IsNullOrEmpty(token))
             {
-                var jwtOptions = context.RequestServices.GetRequiredService<IOptions<Jwt>>().Value;
+                var jwtOptions = new Jwt
+                {
+                    Secret = Environment.GetEnvironmentVariable("JWT_SECRET")!,
+                    Issuer = Environment.GetEnvironmentVariable("JWT_ISSUER")!,
+                    Audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE")!
+                };
 
                 var tokenHandler = new JwtSecurityTokenHandler();
                 var validationParameters = new TokenValidationParameters
@@ -210,7 +220,8 @@ public class Program
                     ValidIssuer = jwtOptions.Issuer,
                     ValidAudience = jwtOptions.Audience,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Secret)),
-                    ClockSkew = TimeSpan.Zero
+                    ClockSkew = TimeSpan.Zero,
+                    RequireExpirationTime = true
                 };
 
                 try
@@ -220,7 +231,7 @@ public class Program
                 }
                 catch
                 {
-                    // Invalid token, do not set context.User
+                    //* Invalid token, do not set context.User
                 }
             }
 

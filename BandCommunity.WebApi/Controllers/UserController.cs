@@ -1,8 +1,7 @@
-﻿using System.Security.Claims;
-using BandCommunity.Application.Common;
-using BandCommunity.Domain.DTO.User;
+﻿using BandCommunity.Application.Common;
 using BandCommunity.Domain.Entities;
 using BandCommunity.Domain.Interfaces;
+using BandCommunity.Domain.Models.User;
 using BandCommunity.Shared.Constant;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,33 +19,32 @@ public class UserController : ControllerBase
         _userRepository = userRepository;
     }
 
-    [HttpPost("update-basic-info")]
+    [HttpPost("fetch-current-user-data")]
     [Authorize]
-    public async Task<IActionResult> UpdateBasicUserInformation([FromBody] BasicInfoRequest request)
+    public async Task<IActionResult> GetCurrentUser([FromBody] BasicInfoRequest request)
     {
         var response = new BaseResultResponse<User>();
+        
+        try
+        {
+            var user = await _userRepository.GetCurrentUserInformation(request);
+            if (user == null)
+            {
+                response.Success = false;
+                response.Message = UserConstant.UserNotFound;
+                return NotFound(response);
+            }
 
-        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        if (!Guid.TryParse(userIdString, out var userId))
+            response.Success = true;
+            response.Message = UserConstant.UserFound;
+            response.Data = user;
+            return Ok(response);
+        }
+        catch (Exception ex)
         {
             response.Success = false;
-            response.Message = UserConstant.InvalidUserId;
-            return Unauthorized(response);
+            response.Message = ex.Message;
+            return BadRequest(response);
         }
-
-        var result = await _userRepository.UpdateBasicUserInformation(request, userId);
-
-        if (result == null)
-        {
-            response.Success = false;
-            response.Message = UserConstant.UserNotFound;
-            return NotFound(response);
-        }
-
-        response.Success = true;
-        response.Message = UserConstant.UserInformationUpdated;
-        response.Data = result;
-        return Ok(response);
     }
 }

@@ -12,6 +12,6 @@ public class Conversation
     public string? GroupAvatarImage { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     
-    public virtual ICollection<Messages> Messages { get; set; }
-    public virtual ICollection<ConversationMember> ConversationMember { get; set; }
+    public virtual ICollection<Messages> Messages { get; set; } = null!;
+    public virtual ICollection<ConversationMember> ConversationMember { get; set; } = null!;
 }

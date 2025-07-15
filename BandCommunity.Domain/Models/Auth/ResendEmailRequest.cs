@@ -1,9 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace BandCommunity.Domain.DTO.Auth;
+namespace BandCommunity.Domain.Models.Auth;
 
 public class ResendEmailRequest
 {
     [Required]
-    public string Email { get; set; }
+    public string Email { get; set; } = null!;
 }

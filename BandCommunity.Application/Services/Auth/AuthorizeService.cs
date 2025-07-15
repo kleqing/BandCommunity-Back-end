@@ -1,14 +1,11 @@
 ﻿using System.Net;
-using System.Security.Claims;
-using BandCommunity.Domain.DTO.Auth;
 using BandCommunity.Domain.Entities;
 using BandCommunity.Domain.Enums;
 using BandCommunity.Domain.Interfaces;
+using BandCommunity.Domain.Models.Auth;
 using BandCommunity.Infrastructure.Auth;
 using BandCommunity.Shared.Constant;
 using BandCommunity.Shared.Exceptions;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using StackExchange.Redis;
@@ -24,7 +21,6 @@ public class AuthorizeService : IAuthorizeService
     private readonly IEmailSender _emailSender;
     private readonly IDatabase _redisDatabase;
     private readonly TimeSpan _tokenExpiryTime;
-    private readonly IHttpContextAccessor _httpContextAccessor;
     private const string RedisPasswordResetPrefix = "reset-password:";
 
     public AuthorizeService(
@@ -33,8 +29,7 @@ public class AuthorizeService : IAuthorizeService
         SignInManager<User> signInManager,
         IUserRepository userRepository,
         IEmailSender emailSender,
-        IDatabase redisDatabase,
-        IHttpContextAccessor httpContextAccessor)
+        IDatabase redisDatabase)
     {
         _authTokenProcess = authTokenProcess;
         _userManager = userManager;
@@ -44,7 +39,6 @@ public class AuthorizeService : IAuthorizeService
         _redisDatabase = redisDatabase;
         _tokenExpiryTime =
             TimeSpan.FromMinutes(int.Parse(Environment.GetEnvironmentVariable("JWT_EXPIRY_MINUTES") ?? "15"));
-        _httpContextAccessor = httpContextAccessor;
     }
 
     public async Task<User> CreateAccount(RegisterRequest request)
@@ -71,6 +65,7 @@ public class AuthorizeService : IAuthorizeService
                 UserName = request.Username,
                 Email = request.Email,
                 PhoneNumber = request.PhoneNumber,
+                Address = request.Address,
                 DateOfBirth = request.DateOfBirth,
                 ProfilePictureUrl = request.ProfilePictureUrl,
                 CreatedAt = request.CreatedAt
@@ -223,7 +218,7 @@ public class AuthorizeService : IAuthorizeService
             throw new GlobalException("Find user in database", LoginConstant.AccountNotFound);
         }
 
-        IdentityResult result = await _userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
+        IdentityResult result = await _userManager.ResetPasswordAsync(user, request.Token!, request.NewPassword);
 
         if (result.Succeeded)
         {
