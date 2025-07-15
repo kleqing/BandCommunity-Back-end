@@ -1,8 +1,8 @@
 ﻿using System.Net;
-using BandCommunity.Domain.DTO.Auth;
 using BandCommunity.Domain.Entities;
 using BandCommunity.Domain.Enums;
 using BandCommunity.Domain.Interfaces;
+using BandCommunity.Domain.Models.Auth;
 using BandCommunity.Infrastructure.Auth;
 using BandCommunity.Shared.Constant;
 using BandCommunity.Shared.Exceptions;
@@ -218,7 +218,7 @@ public class AuthorizeService : IAuthorizeService
             throw new GlobalException("Find user in database", LoginConstant.AccountNotFound);
         }
 
-        IdentityResult result = await _userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
+        IdentityResult result = await _userManager.ResetPasswordAsync(user, request.Token!, request.NewPassword);
 
         if (result.Succeeded)
         {

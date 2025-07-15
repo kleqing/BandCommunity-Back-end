@@ -1,5 +1,5 @@
-﻿using BandCommunity.Domain.DTO.User;
-using BandCommunity.Domain.Entities;
+﻿using BandCommunity.Domain.Entities;
+using BandCommunity.Domain.Models.User;
 
 namespace BandCommunity.Domain.Interfaces;
 

@@ -1,13 +1,13 @@
-﻿using BandCommunity.Domain.DTO.User;
-using BandCommunity.Domain.Entities;
+﻿using BandCommunity.Domain.Entities;
 using BandCommunity.Domain.Interfaces;
+using BandCommunity.Domain.Models.User;
 using BandCommunity.Infrastructure.Data;
 using BandCommunity.Shared.Constant;
 using BandCommunity.Shared.Exceptions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
-namespace BandCommunity.Repository.Repositories;
+namespace BandCommunity.Infrastructure.Repositories;
 
 public class UserRepository : IUserRepository
 {
