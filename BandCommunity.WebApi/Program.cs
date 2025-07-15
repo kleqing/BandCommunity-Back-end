@@ -9,7 +9,7 @@ using BandCommunity.Infrastructure.Auth;
 using BandCommunity.Infrastructure.Data;
 using BandCommunity.Application.Services.Role;
 using BandCommunity.Domain.Interfaces;
-using BandCommunity.Repository.Repositories;
+using BandCommunity.Infrastructure.Repositories;
 using BandCommunity.Shared.Utility;
 using dotenv.net;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
