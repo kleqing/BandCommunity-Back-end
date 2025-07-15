@@ -15,6 +15,6 @@ public class Appeal
     public EntityEnum.SystemRole ReviewedBy { get; set; }
     public DateTime CreatedAt { get; set; }
     
-    public virtual UserRestriction UserRestriction { get; set; }
-    public virtual User User { get; set; }
+    public virtual UserRestriction UserRestriction { get; set; } = null!;
+    public virtual User User { get; set; } = null!;
 }

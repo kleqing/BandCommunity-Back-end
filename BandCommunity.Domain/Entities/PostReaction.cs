@@ -9,5 +9,6 @@ public class PostReaction
     public Guid UserId { get; set; }
     public EntityEnum.ReactionType ReactionType { get; set; }
     public DateTime ReactedAt { get; set; }
-    public virtual Post Post { get; set; }
+    
+    public virtual Post Post { get; set; } = null!;
 }

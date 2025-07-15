@@ -9,11 +9,11 @@ public class Playlist
     public Guid CreatorId { get; set; }
     
     [Required]
-    public string Title { get; set; }
-    public string? Description { get; set; }
+    public string Title { get; set; } = null!;
+    public string? Description { get; set; } = null!;
     public EntityEnum.VisibilityStatus Visibility { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     
-    public virtual ICollection<PlaylistMusic> PlaylistMusics { get; set; }
-    public virtual User User { get; set; }
+    public virtual ICollection<PlaylistMusic> PlaylistMusics { get; set; } = null!;
+    public virtual User User { get; set; } = null!;
 }

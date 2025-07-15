@@ -10,6 +10,6 @@ public class Comment
     public string? MediaUrl { get; set; } //* Optional media attachment
     public DateTime CommentAt { get; set; } = DateTime.UtcNow;
     
-    public virtual Post Post { get; set; }
-    public virtual ICollection<CommentReaction> CommentReaction { get; set; }
+    public virtual Post Post { get; set; } = null!;
+    public virtual ICollection<CommentReaction> CommentReaction { get; set; } = null!;
 }

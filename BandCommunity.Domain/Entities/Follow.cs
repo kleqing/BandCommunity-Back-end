@@ -10,5 +10,5 @@ public class Follow
     public EntityEnum.EntitiesType FollowingEntityType { get; set; } //* "User", "Band", etc.
     public DateTime FollowAt { get; set; } = DateTime.UtcNow;
     
-    public virtual User User { get; set; }
+    public virtual User User { get; set; } = null!;
 }

@@ -13,15 +13,15 @@ public class Music
     public EntityEnum.VisibilityStatus Visibility { get; set; }
     
     [Required]
-    public string Title { get; set; }
+    public string Title { get; set; } = null!;
     
     [Required]
-    public string FileUrl { get; set; }
+    public string FileUrl { get; set; } = null!;
     public int Duration { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     
-    public virtual ICollection<AlbumMusic> AlbumMusics { get; set; }
-    public virtual ICollection<PlaylistMusic> PlaylistMusics { get; set; }
-    public virtual Band Band { get; set; }
-    public virtual User User { get; set; }
+    public virtual ICollection<AlbumMusic> AlbumMusics { get; set; } = null!;
+    public virtual ICollection<PlaylistMusic> PlaylistMusics { get; set; } = null!;
+    public virtual Band Band { get; set; } = null!;
+    public virtual User User { get; set; } = null!;
 }

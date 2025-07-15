@@ -10,5 +10,5 @@ public class CommentReaction
     public EntityEnum.ReactionType ReactionType { get; set; }
     public DateTime ReactedAt { get; set; } = DateTime.UtcNow;
     
-    public virtual Comment Comment { get; set; }
+    public virtual Comment Comment { get; set; } = null!;
 }

@@ -8,6 +8,6 @@ public class Messages
     public string? EncryptedContent { get; set; }
     public DateTime SendAt { get; set; }
     
-    public virtual Conversation Conversation { get; set; }
-    public virtual User User { get; set; }
+    public virtual Conversation Conversation { get; set; } = null!;
+    public virtual User User { get; set; } = null!;
 }

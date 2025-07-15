@@ -6,10 +6,9 @@ namespace BandCommunity.Domain.Entities;
 public class User : IdentityUser<Guid>
 {
     [Required]
-    public string FirstName { get; set; }
-    
-    [Required]
-    public string LastName { get; set; }
+    public string FirstName { get; set; } = null!;
+
+    [Required] public string LastName { get; set; } = null!;
     
     [Required]
     [MaxLength(20)] 
@@ -35,21 +34,21 @@ public class User : IdentityUser<Guid>
     public string? RefreshToken { get; set; }
     public DateTime? RefreshTokenExpiryTime { get; set; }
     
-    public virtual Band Band { get; set; }
-    public virtual ICollection<Follow> Follow { get; set; }
-    public virtual ICollection<Share> Share { get; set; }
-    public virtual ICollection<Like> Like { get; set; }
-    public virtual ICollection<History> History { get; set; }
-    public virtual ICollection<Notification> Notification { get; set; }
-    public virtual ICollection<Report> Report { get; set; }
-    public virtual ICollection<Post> Post { get; set; }
-    public virtual ICollection<UserRestriction> UserRestriction { get; set; }
-    public virtual ICollection<Messages> Messages { get; set; }
-    public virtual ICollection<ConversationMember> ConversationMember { get; set; }
-    public virtual ICollection<GroupMember> GroupMember { get; set; }
-    public virtual ICollection<Groups> Groups { get; set; }
-    public virtual ICollection<BandMember> BandMembers { get; set; }
-    public virtual ICollection<Music> Music { get; set; }
-    public virtual ICollection<Playlist> Playlist { get; set; }
-    public virtual ICollection<Appeal> Appeals { get; set; }
+    public virtual Band Band { get; set; } = null!;
+    public virtual ICollection<Follow> Follow { get; set; } = null!;
+    public virtual ICollection<Share> Share { get; set; } = null!;
+    public virtual ICollection<Like> Like { get; set; } = null!;
+    public virtual ICollection<History> History { get; set; } = null!;
+    public virtual ICollection<Notification> Notification { get; set; } = null!;
+    public virtual ICollection<Report> Report { get; set; } = null!;
+    public virtual ICollection<Post> Post { get; set; } = null!;
+    public virtual ICollection<UserRestriction> UserRestriction { get; set; } = null!;
+    public virtual ICollection<Messages> Messages { get; set; } = null!;
+    public virtual ICollection<ConversationMember> ConversationMember { get; set; } = null!;
+    public virtual ICollection<GroupMember> GroupMember { get; set; } = null!;
+    public virtual ICollection<Groups> Groups { get; set; } = null!;
+    public virtual ICollection<BandMember> BandMembers { get; set; } = null!;
+    public virtual ICollection<Music> Music { get; set; } = null!;
+    public virtual ICollection<Playlist> Playlist { get; set; } = null!;
+    public virtual ICollection<Appeal> Appeals { get; set; } = null!;
 }

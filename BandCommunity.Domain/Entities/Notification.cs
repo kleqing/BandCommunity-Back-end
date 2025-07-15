@@ -13,5 +13,5 @@ public class Notification
     public bool IsRead { get; set; }
     public DateTime NotifyAt { get; set; }
     
-    public virtual User User { get; set; }
+    public virtual User User { get; set; } = null!;
 }
